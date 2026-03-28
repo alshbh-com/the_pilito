@@ -21,6 +21,7 @@ const mainItems = [
   { title: 'الأوردرات', url: '/orders', icon: Package },
   { title: 'جميع الأوردرات', url: '/unassigned-orders', icon: PackageSearch },
   { title: 'الأوردرات القديمة', url: '/closed-orders', icon: Archive },
+  { title: 'استيراد Excel', url: '/excel-import', icon: ClipboardList },
   { title: 'بحث شامل', url: '/search', icon: Search },
 ];
 
@@ -57,7 +58,6 @@ const toolsItems = [
   { title: 'ملاحظات الأوردرات', url: '/order-notes', icon: MessageSquare },
   { title: 'التواصل الداخلي', url: '/chat', icon: MessageSquare },
   { title: 'تصدير البيانات', url: '/data-export', icon: FileSpreadsheet },
-  { title: 'استيراد Excel', url: '/excel-import', icon: ClipboardList },
   { title: 'سجل الحركات', url: '/logs', icon: ScrollText },
   { title: 'سلة المحذوفات', url: '/trash', icon: Trash2 },
   { title: 'الإعدادات', url: '/settings', icon: Settings },
