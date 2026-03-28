@@ -3,7 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Lock, Loader2, Package } from 'lucide-react';
+import { Lock, Loader2 } from 'lucide-react';
+import logo from '@/assets/logo.jpg';
 
 export default function Login() {
   const [password, setPassword] = useState('');
@@ -35,9 +36,7 @@ export default function Login() {
         <CardContent className="pt-8 pb-6 px-6">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary shadow-glow mb-4">
-              <Package className="h-8 w-8 text-primary-foreground" />
-            </div>
+            <img src={logo} alt="The Pilito" className="mx-auto h-24 w-24 rounded-2xl shadow-glow mb-4 object-cover" />
             <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
               The Pilito
             </h1>

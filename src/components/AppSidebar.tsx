@@ -5,6 +5,7 @@ import {
   TrendingUp, Calendar, UserCheck, MessageSquare, Locate, FileSpreadsheet,
   CircleDot, Calculator, Contact, ClipboardList, Trash2, FileBarChart, Navigation2, BookOpen
 } from 'lucide-react';
+import logo from '@/assets/logo.jpg';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions, urlToSectionKey } from '@/hooks/usePermissions';
@@ -79,9 +80,7 @@ export function AppSidebar() {
     <Sidebar side="right" collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-glow font-bold text-sm text-primary-foreground">
-            P
-          </div>
+          <img src={logo} alt="The Pilito" className="h-9 w-9 shrink-0 rounded-xl object-cover" />
           <span className="text-lg font-extrabold text-sidebar-foreground group-data-[collapsible=icon]:hidden tracking-wide">
             The Pilito
           </span>
