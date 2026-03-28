@@ -313,12 +313,14 @@ export type Database = {
           cash_arrived_entries: Json | null
           created_at: string
           diary_date: string
+          diary_number: number
           id: string
           is_archived: boolean | null
           is_closed: boolean | null
           lock_status_updates: boolean | null
           manual_arrived_total: number | null
           office_id: string
+          prevent_new_orders: boolean | null
           previous_due: number | null
           show_postponed_due: boolean | null
           updated_at: string
@@ -328,12 +330,14 @@ export type Database = {
           cash_arrived_entries?: Json | null
           created_at?: string
           diary_date?: string
+          diary_number?: number
           id?: string
           is_archived?: boolean | null
           is_closed?: boolean | null
           lock_status_updates?: boolean | null
           manual_arrived_total?: number | null
           office_id: string
+          prevent_new_orders?: boolean | null
           previous_due?: number | null
           show_postponed_due?: boolean | null
           updated_at?: string
@@ -343,12 +347,14 @@ export type Database = {
           cash_arrived_entries?: Json | null
           created_at?: string
           diary_date?: string
+          diary_number?: number
           id?: string
           is_archived?: boolean | null
           is_closed?: boolean | null
           lock_status_updates?: boolean | null
           manual_arrived_total?: number | null
           office_id?: string
+          prevent_new_orders?: boolean | null
           previous_due?: number | null
           show_postponed_due?: boolean | null
           updated_at?: string
@@ -574,7 +580,11 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          notes: string | null
+          owner_name: string | null
+          owner_phone: string | null
           phone: string | null
+          specialty: string | null
         }
         Insert: {
           address?: string | null
@@ -582,7 +592,11 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          notes?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           phone?: string | null
+          specialty?: string | null
         }
         Update: {
           address?: string | null
@@ -590,7 +604,11 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          notes?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           phone?: string | null
+          specialty?: string | null
         }
         Relationships: []
       }
