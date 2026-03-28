@@ -1,45 +1,35 @@
 
 
-## المشاكل والحلول
+# Rebranding & Theme Change Plan
 
-### 1. سعر الشحن الموحد بينزل صفر
-**السبب**: في `ExcelImport.tsx` سطر 166، لو عمود الشحن موجود في الملف بس فاضي، القيمة بتترجم لـ `0` وبالتالي `0` falsy فالمفروض يشتغل. لكن المشكلة الحقيقية إن لو المستخدم ما ربطش عمود شحن، القيمة `order.delivery_price` تكون `undefined` والـ globalShipping المفروض يشتغل. هتحقق من الكود كامل، لكن الحل هو التأكد إن globalShipping يتطبق صراحة لو delivery_price مش موجود أو صفر.
+## 1. Replace "MODEX" → "The Pilito" (7 files, ~8 occurrences)
 
-**الحل**: تغيير المنطق في `applyMapping` ليستخدم globalShipping بشكل واضح:
-```typescript
-delivery_price: (order.delivery_price && order.delivery_price > 0) 
-  ? order.delivery_price 
-  : (globalShipping ? parseFloat(globalShipping) : 0),
-```
+| File | What changes |
+|------|-------------|
+| `index.html` | Title + OG/Twitter meta tags |
+| `src/pages/Login.tsx` | Heading text |
+| `src/components/AppSidebar.tsx` | Sidebar brand name |
+| `src/pages/DailyReport.tsx` | Print header |
+| `src/pages/PrintSticker.tsx` | Sticker header + invoice header |
+| `src/lib/diaryExport.ts` | Two diary export headers |
+| `supabase/functions/auth-login/index.ts` | `@modex.ship` → `@thepilito.ship` |
 
-### 2. الأسعار فوق 1000 بتظهر 1 أو 2
-**السبب**: ملفات Excel أحيانا بتخزن الأرقام بفواصل (مثلاً `1,000`). `parseFloat("1,000")` بيرجع `1` لأنه بيقف عند الفاصلة.
+## 2. Theme: White background + Orange accent + Black text (`src/index.css`)
 
-**الحل**: في `applyMapping` سطر 151، قبل `parseFloat` نشيل الفواصل:
-```typescript
-else if (key === 'price' || key === 'delivery_price') {
-  const cleaned = String(val).replace(/,/g, '');
-  order[key] = parseFloat(cleaned) || 0;
-}
-```
+All CSS custom properties updated:
 
-### 3. اسم المندوب يفضل موجود بعد التقفيل
-**السبب**: في `closeSelected` سطر 104، التحديث بيعمل `is_closed: true` بس من غير ما يمسح `courier_id` - ده كويس. لكن صفحة الأوردرات المقفلة `ClosedOrders.tsx` مش بتعرض عمود المندوب أصلاً.
+- **Background/cards**: white / very light gray
+- **Text (foreground)**: black/near-black
+- **Primary**: orange (`25 95% 53%`)
+- **Gradients/glows**: orange-based
+- **Sidebar**: white background, black text, orange active accent
+- **Borders**: light gray
+- **Scrollbar**: light track, orange hover thumb
 
-**الحل**: 
-- إضافة عمود "المندوب" في جدول الأوردرات المقفلة `ClosedOrders.tsx`
-- تحميل بيانات المناديب (profiles) وعرض اسم المندوب
+## 3. Update memory files
 
-### 4. الأوردر المقفل يختفي من عند المندوب
-**الوضع الحالي**: صفحة `CourierOrders.tsx` المفروض بتفلتر على `is_closed = false`. هتتأكد من ده.
-
----
-
-## الملفات المطلوب تعديلها
-
-| الملف | التعديل |
-|---|---|
-| `src/pages/ExcelImport.tsx` | إصلاح parseFloat بإزالة الفواصل + إصلاح منطق globalShipping |
-| `src/pages/ClosedOrders.tsx` | إضافة عمود المندوب مع تحميل أسماء المناديب |
-| `src/pages/CourierOrders.tsx` | التأكد من فلترة `is_closed = false` |
+- `mem://style/branding` → "The Pilito"
+- `mem://style/visual-identity` → white + orange theme
+- `mem://style/sticker-specifications` → "The Pilito" header
+- `mem://auth/email-domain` → `@thepilito.ship`
 
