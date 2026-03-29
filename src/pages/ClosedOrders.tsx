@@ -97,6 +97,17 @@ export default function ClosedOrders() {
           <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="بحث..." value={search} onChange={e => setSearch(e.target.value)} className="pr-9 bg-secondary border-border" />
         </div>
+        <Select value={officeFilter} onValueChange={setOfficeFilter}>
+          <SelectTrigger className="w-[160px] bg-secondary border-border">
+            <SelectValue placeholder="كل المكاتب" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل المكاتب</SelectItem>
+            {offices.map(o => (
+              <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {isOwner && selected.size > 0 && (
           <>
             <Button size="sm" variant="outline" onClick={reopenSelected}><Unlock className="h-4 w-4 ml-1" />إلغاء التقفيل {selected.size}</Button>
