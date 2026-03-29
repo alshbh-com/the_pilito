@@ -16,10 +16,12 @@ export default function ClosedOrders() {
   const { isOwner } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [couriers, setCouriers] = useState<Record<string, string>>({});
+  const [offices, setOffices] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [officeFilter, setOfficeFilter] = useState('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  useEffect(() => { loadOrders(); loadCouriers(); }, []);
+  useEffect(() => { loadOrders(); loadCouriers(); loadOffices(); }, []);
 
   const loadCouriers = async () => {
     const { data } = await supabase.from('profiles').select('id, full_name');
