@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { LogOut, Eye, Phone, MessageSquare, Send, MapPin, AlertTriangle } from 'lucide-react';
+import { LogOut, Eye, Phone, MessageSquare, Send, MapPin, AlertTriangle, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
 import { useCourierLocation } from '@/hooks/useCourierLocation';
@@ -32,6 +32,7 @@ export default function CourierOrders() {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [chatMsg, setChatMsg] = useState('');
   const [chatSending, setChatSending] = useState(false);
+  const [search, setSearch] = useState('');
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // GPS tracking - mandatory, auto-prompt
@@ -317,6 +318,11 @@ export default function CourierOrders() {
           </CardContent>
         </Card>
 
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="بحث بالاسم أو الهاتف أو الكود..." value={search} onChange={e => setSearch(e.target.value)} className="pr-9 bg-secondary border-border" />
+        </div>
+
         <Card className="bg-card border-border">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -334,9 +340,19 @@ export default function CourierOrders() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.length === 0 ? (
+                  {(() => {
+                    const filtered = orders.filter(o => {
+                      if (!search) return true;
+                      const s = search.toLowerCase();
+                      return o.customer_name?.toLowerCase().includes(s) ||
+                        o.customer_phone?.includes(search) ||
+                        o.customer_code?.includes(search) ||
+                        o.barcode?.includes(search) ||
+                        o.address?.toLowerCase().includes(s);
+                    });
+                    return filtered.length === 0 ? (
                     <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">لا توجد أوردرات</TableCell></TableRow>
-                  ) : orders.map((order, idx) => (
+                  ) : filtered.map((order, idx) => (
                     <TableRow key={order.id} className="border-border">
                       <TableCell>
                         <div className="flex flex-col gap-1">
