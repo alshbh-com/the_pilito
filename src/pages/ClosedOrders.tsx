@@ -48,6 +48,7 @@ export default function ClosedOrders() {
   };
 
   const filtered = orders.filter(o => {
+    if (officeFilter !== 'all' && o.office_id !== officeFilter) return false;
     if (!search) return true;
     const term = search.toLowerCase();
     return (
