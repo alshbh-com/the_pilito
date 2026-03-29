@@ -32,6 +32,11 @@ export default function ClosedOrders() {
     }
   };
 
+  const loadOffices = async () => {
+    const { data } = await supabase.from('offices').select('id, name').order('name');
+    setOffices(data || []);
+  };
+
   const loadOrders = async () => {
     const { data } = await supabase
       .from('orders')
