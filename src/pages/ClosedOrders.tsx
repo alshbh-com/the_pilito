@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Trash2, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,10 +16,12 @@ export default function ClosedOrders() {
   const { isOwner } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [couriers, setCouriers] = useState<Record<string, string>>({});
+  const [offices, setOffices] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [officeFilter, setOfficeFilter] = useState('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  useEffect(() => { loadOrders(); loadCouriers(); }, []);
+  useEffect(() => { loadOrders(); loadCouriers(); loadOffices(); }, []);
 
   const loadCouriers = async () => {
     const { data } = await supabase.from('profiles').select('id, full_name');
@@ -27,6 +30,11 @@ export default function ClosedOrders() {
       data.forEach(p => { map[p.id] = p.full_name; });
       setCouriers(map);
     }
+  };
+
+  const loadOffices = async () => {
+    const { data } = await supabase.from('offices').select('id, name').order('name');
+    setOffices(data || []);
   };
 
   const loadOrders = async () => {
@@ -40,6 +48,7 @@ export default function ClosedOrders() {
   };
 
   const filtered = orders.filter(o => {
+    if (officeFilter !== 'all' && o.office_id !== officeFilter) return false;
     if (!search) return true;
     const term = search.toLowerCase();
     return (
@@ -88,6 +97,17 @@ export default function ClosedOrders() {
           <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="بحث..." value={search} onChange={e => setSearch(e.target.value)} className="pr-9 bg-secondary border-border" />
         </div>
+        <Select value={officeFilter} onValueChange={setOfficeFilter}>
+          <SelectTrigger className="w-[160px] bg-secondary border-border">
+            <SelectValue placeholder="كل المكاتب" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل المكاتب</SelectItem>
+            {offices.map(o => (
+              <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {isOwner && selected.size > 0 && (
           <>
             <Button size="sm" variant="outline" onClick={reopenSelected}><Unlock className="h-4 w-4 ml-1" />إلغاء التقفيل {selected.size}</Button>
