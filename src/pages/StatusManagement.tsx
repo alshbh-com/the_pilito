@@ -4,11 +4,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUp, ArrowDown, Lock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowUp, ArrowDown, Lock, Palette, Check } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function StatusManagement() {
   const [statuses, setStatuses] = useState<any[]>([]);
   const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
+  const [editingColorId, setEditingColorId] = useState<string | null>(null);
+  const [colorValue, setColorValue] = useState('');
 
   useEffect(() => { loadData(); }, []);
 
@@ -45,6 +49,22 @@ export default function StatusManagement() {
     loadData();
   };
 
+  const startEditColor = (status: any) => {
+    setEditingColorId(status.id);
+    setColorValue(status.color || '#6b7280');
+  };
+
+  const saveColor = async (statusId: string) => {
+    const { error } = await supabase.from('order_statuses').update({ color: colorValue }).eq('id', statusId);
+    if (error) {
+      toast.error('خطأ في حفظ اللون');
+    } else {
+      toast.success('تم تحديث اللون');
+      setEditingColorId(null);
+      loadData();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -61,7 +81,6 @@ export default function StatusManagement() {
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-center">اللون</TableHead>
                   <TableHead className="text-center">عدد الأوردرات</TableHead>
-                  <TableHead className="text-center">نوع</TableHead>
                   <TableHead className="text-center">إجراءات</TableHead>
                 </TableRow>
               </TableHeader>
@@ -78,19 +97,33 @@ export default function StatusManagement() {
                       <Badge style={{ backgroundColor: (s.color || '#6b7280') + '30', color: s.color || '#6b7280' }}>{s.name}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="w-6 h-6 rounded-full mx-auto" style={{ backgroundColor: s.color || '#6b7280' }} />
-                    </TableCell>
-                    <TableCell className="text-center font-bold">{orderCounts[s.id] || 0}</TableCell>
-                    <TableCell className="text-center">
-                      {s.is_fixed ? (
-                        <Badge variant="outline" className="text-xs gap-1"><Lock className="h-3 w-3" />ثابتة</Badge>
+                      {editingColorId === s.id ? (
+                        <div className="flex items-center gap-1 justify-center">
+                          <Input
+                            type="color"
+                            value={colorValue}
+                            onChange={(e) => setColorValue(e.target.value)}
+                            className="w-10 h-8 p-0 border-0 cursor-pointer bg-transparent"
+                          />
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-green-500" onClick={() => saveColor(s.id)}>
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        </div>
                       ) : (
-                        <Badge variant="secondary" className="text-xs">مخصصة</Badge>
+                        <div
+                          className="w-6 h-6 rounded-full mx-auto cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                          style={{ backgroundColor: s.color || '#6b7280' }}
+                          onClick={() => startEditColor(s)}
+                          title="اضغط لتغيير اللون"
+                        />
                       )}
                     </TableCell>
+                    <TableCell className="text-center font-bold">{orderCounts[s.id] || 0}</TableCell>
                     <TableCell>
                       <div className="flex gap-1 justify-center">
-                        <Badge variant="outline" className="text-xs gap-1"><Lock className="h-3 w-3" />محمية</Badge>
+                        <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => startEditColor(s)}>
+                          <Palette className="h-3 w-3" /> تغيير اللون
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
