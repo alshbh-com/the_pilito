@@ -210,7 +210,6 @@ export default function ExcelImport() {
         size: o.size || '',
         notes: o.notes || '',
         office_id: selectedOffice,
-        tracking_id: 'temp',
       }));
 
       const { data, error } = await supabase.from('orders').insert(batch).select('id');

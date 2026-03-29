@@ -172,7 +172,6 @@ function AddOfficeOrderDialog({ officeId, onOrderAdded }: { officeId: string | n
         address: fullAddress,
         office_id: officeId,
         barcode,
-        tracking_id: 'temp',
       });
       if (error) throw error;
 

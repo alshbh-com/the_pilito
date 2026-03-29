@@ -157,8 +157,6 @@ export default function AddOrderDialog({ onOrderAdded, editOrder, onClose }: Pro
         logActivity('تعديل أوردر', { order_id: editOrder.id, customer: orderData.customer_name });
         toast.success('تم تحديث الأوردر');
       } else {
-        orderData.tracking_id = 'temp';
-
         const { data: inserted, error } = await supabase.from('orders').insert(orderData).select('barcode').single();
         if (error) throw error;
 
