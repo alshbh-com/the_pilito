@@ -48,11 +48,16 @@ export default function OfficePortal() {
     const { data: sts } = await supabase.from('order_statuses').select('*').order('sort_order');
     setStatuses(sts || []);
 
-    const { data: ords } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
-    setOrders(ords || []);
+    if (profile?.office_id) {
+      const { data: ords } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('office_id', profile.office_id)
+        .order('created_at', { ascending: false });
+      setOrders(ords || []);
+    } else {
+      setOrders([]);
+    }
 
     setLoading(false);
   };
