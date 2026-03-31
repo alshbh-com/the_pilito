@@ -48,11 +48,16 @@ export default function OfficePortal() {
     const { data: sts } = await supabase.from('order_statuses').select('*').order('sort_order');
     setStatuses(sts || []);
 
-    const { data: ords } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
-    setOrders(ords || []);
+    if (profile?.office_id) {
+      const { data: ords } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('office_id', profile.office_id)
+        .order('created_at', { ascending: false });
+      setOrders(ords || []);
+    } else {
+      setOrders([]);
+    }
 
     setLoading(false);
   };
@@ -155,9 +160,6 @@ function AddOfficeOrderDialog({ officeId, onOrderAdded }: { officeId: string | n
 
     setLoading(true);
     try {
-      const { data: seqData } = await supabase.rpc('nextval_barcode' as any);
-      const barcode = seqData ? String(seqData) : String(Date.now());
-
       const fullAddress = [form.governorate, form.address].filter(Boolean).join(' - ');
       const { error } = await supabase.from('orders').insert({
         customer_name: form.customer_name,
@@ -171,7 +173,6 @@ function AddOfficeOrderDialog({ officeId, onOrderAdded }: { officeId: string | n
         size: form.size,
         address: fullAddress,
         office_id: officeId,
-        barcode,
       });
       if (error) throw error;
 

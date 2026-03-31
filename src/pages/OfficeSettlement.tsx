@@ -121,6 +121,7 @@ export default function OfficeSettlement() {
     const { data: orderData } = await supabase.from('orders').select('*, order_statuses(name, color)')
       .eq('office_id', selectedOffice)
       .eq('is_closed', false)
+      .eq('is_settled', false)
       .order('created_at', { ascending: false });
 
     if (orderData && orderData.length > 0) {
