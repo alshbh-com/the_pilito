@@ -155,9 +155,6 @@ function AddOfficeOrderDialog({ officeId, onOrderAdded }: { officeId: string | n
 
     setLoading(true);
     try {
-      const { data: seqData } = await supabase.rpc('nextval_barcode' as any);
-      const barcode = seqData ? String(seqData) : String(Date.now());
-
       const fullAddress = [form.governorate, form.address].filter(Boolean).join(' - ');
       const { error } = await supabase.from('orders').insert({
         customer_name: form.customer_name,
@@ -171,7 +168,6 @@ function AddOfficeOrderDialog({ officeId, onOrderAdded }: { officeId: string | n
         size: form.size,
         address: fullAddress,
         office_id: officeId,
-        barcode,
       });
       if (error) throw error;
 
