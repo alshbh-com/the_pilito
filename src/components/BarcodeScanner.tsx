@@ -38,7 +38,7 @@ export default function BarcodeScanner({ onScan, trigger }: BarcodeScannerProps)
     return () => {
       clearTimeout(timer);
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
+        try { if (scannerRef.current.isScanning) scannerRef.current.stop().catch(() => {}); } catch {}
         scannerRef.current = null;
       }
     };
