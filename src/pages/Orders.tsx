@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Search, UserPlus, Lock, Trash2, UserMinus, Pencil } from 'lucide-react';
+import { Search, UserPlus, Lock, Trash2, UserMinus, Pencil, Camera } from 'lucide-react';
+import BarcodeScanner from '@/components/BarcodeScanner';
 import { toast } from 'sonner';
 import AddOrderDialog from '@/components/AddOrderDialog';
 import { useAuth } from '@/contexts/AuthContext';
@@ -143,6 +144,7 @@ export default function Orders() {
           <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="بحث..." value={search} onChange={e => setSearch(e.target.value)} className="pr-9 bg-secondary border-border" />
         </div>
+        <BarcodeScanner onScan={(barcode) => { setSearch(barcode); setSelected(new Set(orders.filter(o => o.barcode === barcode).map(o => o.id))); }} />
         <Select value={filterOffice} onValueChange={setFilterOffice}>
           <SelectTrigger className="w-32 sm:w-40 bg-secondary border-border"><SelectValue placeholder="المكتب" /></SelectTrigger>
           <SelectContent>

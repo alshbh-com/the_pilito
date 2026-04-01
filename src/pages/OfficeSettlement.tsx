@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2, Download, Share2, Lock, Unlock, Ban, Check, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
@@ -46,6 +47,7 @@ export default function OfficeSettlement() {
   const [isLocked, setIsLocked] = useState(false);
   const [isClosed, setIsClosed] = useState(false);
   const [preventAdd, setPreventAdd] = useState(false);
+  const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set());
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLoadingRef = useRef(false);
 
@@ -216,12 +218,60 @@ export default function OfficeSettlement() {
     r.code.trim() !== '' || r.name.trim() !== '' || r.status_id || r.amount.trim() !== '' || r.shipping.trim() !== '' || r.arrived.trim() !== ''
   );
 
+  // Status filter helpers
+  const statusFilterNames = ['تم التسليم', 'تسليم جزئي', 'دفع الشحن', 'رفض ودفع شحن', 'المرتجع', 'رفض', 'الشحن على الراسل'];
+  const toggleStatusFilter = (name: string) => {
+    setStatusFilters(prev => {
+      const n = new Set(prev);
+      n.has(name) ? n.delete(name) : n.add(name);
+      return n;
+    });
+  };
+
+  const displayRows = useMemo(() => {
+    if (statusFilters.size === 0) return rows;
+    return rows.filter(r => {
+      const sName = statuses.find(s => s.id === r.status_id)?.name || '';
+      return statusFilters.has(sName);
+    });
+  }, [rows, statusFilters, statuses]);
+
+  // Dynamic summary based on filters
+  const filterSummary = useMemo(() => {
+    const collectionStatuses = ['تم التسليم', 'تسليم جزئي', 'دفع الشحن', 'رفض ودفع شحن', 'الشحن على الراسل'];
+    const returnStatuses = ['المرتجع', 'رفض'];
+    const activeCollection = [...statusFilters].filter(s => collectionStatuses.includes(s));
+    const activeReturn = [...statusFilters].filter(s => returnStatuses.includes(s));
+
+    let collectionTotal = 0;
+    let returnTotal = 0;
+
+    displayRows.forEach(r => {
+      const sName = statuses.find(s => s.id === r.status_id)?.name || '';
+      if (activeCollection.includes(sName)) {
+        collectionTotal += parseFloat(r.amount) || 0;
+      }
+      if (activeReturn.includes(sName)) {
+        returnTotal += parseFloat(r.amount) || 0;
+      }
+    });
+
+    return {
+      hasCollectionFilter: activeCollection.length > 0,
+      hasReturnFilter: activeReturn.length > 0,
+      collectionTotal,
+      returnTotal,
+      collectionShipping: displayRows.filter(r => activeCollection.includes(statuses.find(s => s.id === r.status_id)?.name || '')).reduce((s, r) => s + (parseFloat(r.shipping) || 0), 0),
+      returnCount: displayRows.filter(r => activeReturn.includes(statuses.find(s => s.id === r.status_id)?.name || '')).length,
+    };
+  }, [displayRows, statusFilters, statuses]);
+
   const officeName = offices.find(o => o.id === selectedOffice)?.name || 'تقفيلة';
   const pickupUnits = usedRows.length;
-  const totalPieces = rows.reduce((sum, r) => sum + (parseFloat(r.pieces) || 0), 0);
-  const totalAmount = rows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
-  const totalShipping = rows.reduce((sum, r) => sum + (parseFloat(r.shipping) || 0), 0);
-  const totalArrived = rows.reduce((sum, r) => sum + (parseFloat(r.arrived) || 0), 0);
+  const totalPieces = displayRows.reduce((sum, r) => sum + (parseFloat(r.pieces) || 0), 0);
+  const totalAmount = displayRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+  const totalShipping = displayRows.reduce((sum, r) => sum + (parseFloat(r.shipping) || 0), 0);
+  const totalArrived = displayRows.reduce((sum, r) => sum + (parseFloat(r.arrived) || 0), 0);
 
   const pickupRateNum = parseFloat(pickupRate) || 0;
   const pickupTotal = pickupUnits * pickupRateNum;
@@ -339,6 +389,42 @@ export default function OfficeSettlement() {
         </Button>
       </div>
 
+      {/* Status Filters */}
+      {selectedOffice && selectedOffice !== 'all' && (
+        <Card className="bg-card border-border">
+          <CardContent className="p-3 space-y-2">
+            <p className="text-sm font-medium">فلتر حسب الحالة:</p>
+            <div className="flex flex-wrap gap-3">
+              {statusFilterNames.map(name => (
+                <label key={name} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <Checkbox checked={statusFilters.has(name)} onCheckedChange={() => toggleStatusFilter(name)} />
+                  {name}
+                </label>
+              ))}
+            </div>
+            {(filterSummary.hasCollectionFilter || filterSummary.hasReturnFilter) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border">
+                {filterSummary.hasCollectionFilter && (
+                  <div className="bg-primary/10 rounded-lg p-3">
+                    <p className="text-sm font-bold text-primary">التحصيل</p>
+                    <p className="text-lg font-bold">{filterSummary.collectionTotal} ج.م</p>
+                    <p className="text-xs text-muted-foreground">العمولة (شحن): {filterSummary.collectionShipping} ج.م</p>
+                    <p className="text-xs font-medium">الصافي: {filterSummary.collectionTotal - filterSummary.collectionShipping} ج.م</p>
+                  </div>
+                )}
+                {filterSummary.hasReturnFilter && (
+                  <div className="bg-destructive/10 rounded-lg p-3">
+                    <p className="text-sm font-bold text-destructive">المرتجع</p>
+                    <p className="text-lg font-bold">{filterSummary.returnTotal} ج.م</p>
+                    <p className="text-xs text-muted-foreground">{filterSummary.returnCount} أوردر مرتجع</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {closingId && (
         <p className="text-xs text-muted-foreground">✅ البيانات محفوظة في قاعدة البيانات</p>
       )}
@@ -361,7 +447,7 @@ export default function OfficeSettlement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((row, idx) => (
+                {displayRows.map((row, idx) => (
                   <TableRow key={row.id} className="border-border">
                     <TableCell className="text-sm text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell>
