@@ -218,12 +218,60 @@ export default function OfficeSettlement() {
     r.code.trim() !== '' || r.name.trim() !== '' || r.status_id || r.amount.trim() !== '' || r.shipping.trim() !== '' || r.arrived.trim() !== ''
   );
 
+  // Status filter helpers
+  const statusFilterNames = ['تم التسليم', 'تسليم جزئي', 'دفع الشحن', 'رفض ودفع شحن', 'المرتجع', 'رفض', 'الشحن على الراسل'];
+  const toggleStatusFilter = (name: string) => {
+    setStatusFilters(prev => {
+      const n = new Set(prev);
+      n.has(name) ? n.delete(name) : n.add(name);
+      return n;
+    });
+  };
+
+  const displayRows = useMemo(() => {
+    if (statusFilters.size === 0) return rows;
+    return rows.filter(r => {
+      const sName = statuses.find(s => s.id === r.status_id)?.name || '';
+      return statusFilters.has(sName);
+    });
+  }, [rows, statusFilters, statuses]);
+
+  // Dynamic summary based on filters
+  const filterSummary = useMemo(() => {
+    const collectionStatuses = ['تم التسليم', 'تسليم جزئي', 'دفع الشحن', 'رفض ودفع شحن', 'الشحن على الراسل'];
+    const returnStatuses = ['المرتجع', 'رفض'];
+    const activeCollection = [...statusFilters].filter(s => collectionStatuses.includes(s));
+    const activeReturn = [...statusFilters].filter(s => returnStatuses.includes(s));
+
+    let collectionTotal = 0;
+    let returnTotal = 0;
+
+    displayRows.forEach(r => {
+      const sName = statuses.find(s => s.id === r.status_id)?.name || '';
+      if (activeCollection.includes(sName)) {
+        collectionTotal += parseFloat(r.amount) || 0;
+      }
+      if (activeReturn.includes(sName)) {
+        returnTotal += parseFloat(r.amount) || 0;
+      }
+    });
+
+    return {
+      hasCollectionFilter: activeCollection.length > 0,
+      hasReturnFilter: activeReturn.length > 0,
+      collectionTotal,
+      returnTotal,
+      collectionShipping: displayRows.filter(r => activeCollection.includes(statuses.find(s => s.id === r.status_id)?.name || '')).reduce((s, r) => s + (parseFloat(r.shipping) || 0), 0),
+      returnCount: displayRows.filter(r => activeReturn.includes(statuses.find(s => s.id === r.status_id)?.name || '')).length,
+    };
+  }, [displayRows, statusFilters, statuses]);
+
   const officeName = offices.find(o => o.id === selectedOffice)?.name || 'تقفيلة';
   const pickupUnits = usedRows.length;
-  const totalPieces = rows.reduce((sum, r) => sum + (parseFloat(r.pieces) || 0), 0);
-  const totalAmount = rows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
-  const totalShipping = rows.reduce((sum, r) => sum + (parseFloat(r.shipping) || 0), 0);
-  const totalArrived = rows.reduce((sum, r) => sum + (parseFloat(r.arrived) || 0), 0);
+  const totalPieces = displayRows.reduce((sum, r) => sum + (parseFloat(r.pieces) || 0), 0);
+  const totalAmount = displayRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+  const totalShipping = displayRows.reduce((sum, r) => sum + (parseFloat(r.shipping) || 0), 0);
+  const totalArrived = displayRows.reduce((sum, r) => sum + (parseFloat(r.arrived) || 0), 0);
 
   const pickupRateNum = parseFloat(pickupRate) || 0;
   const pickupTotal = pickupUnits * pickupRateNum;
