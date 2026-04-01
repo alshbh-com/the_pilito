@@ -389,6 +389,42 @@ export default function OfficeSettlement() {
         </Button>
       </div>
 
+      {/* Status Filters */}
+      {selectedOffice && selectedOffice !== 'all' && (
+        <Card className="bg-card border-border">
+          <CardContent className="p-3 space-y-2">
+            <p className="text-sm font-medium">فلتر حسب الحالة:</p>
+            <div className="flex flex-wrap gap-3">
+              {statusFilterNames.map(name => (
+                <label key={name} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <Checkbox checked={statusFilters.has(name)} onCheckedChange={() => toggleStatusFilter(name)} />
+                  {name}
+                </label>
+              ))}
+            </div>
+            {(filterSummary.hasCollectionFilter || filterSummary.hasReturnFilter) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border">
+                {filterSummary.hasCollectionFilter && (
+                  <div className="bg-primary/10 rounded-lg p-3">
+                    <p className="text-sm font-bold text-primary">التحصيل</p>
+                    <p className="text-lg font-bold">{filterSummary.collectionTotal} ج.م</p>
+                    <p className="text-xs text-muted-foreground">العمولة (شحن): {filterSummary.collectionShipping} ج.م</p>
+                    <p className="text-xs font-medium">الصافي: {filterSummary.collectionTotal - filterSummary.collectionShipping} ج.م</p>
+                  </div>
+                )}
+                {filterSummary.hasReturnFilter && (
+                  <div className="bg-destructive/10 rounded-lg p-3">
+                    <p className="text-sm font-bold text-destructive">المرتجع</p>
+                    <p className="text-lg font-bold">{filterSummary.returnTotal} ج.م</p>
+                    <p className="text-xs text-muted-foreground">{filterSummary.returnCount} أوردر مرتجع</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {closingId && (
         <p className="text-xs text-muted-foreground">✅ البيانات محفوظة في قاعدة البيانات</p>
       )}
