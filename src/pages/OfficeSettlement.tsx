@@ -447,7 +447,7 @@ export default function OfficeSettlement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((row, idx) => (
+                {displayRows.map((row, idx) => (
                   <TableRow key={row.id} className="border-border">
                     <TableCell className="text-sm text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell>
