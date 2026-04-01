@@ -26,7 +26,7 @@ export default function BarcodeScanner({ onScan, trigger }: BarcodeScannerProps)
         { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.5 },
         (decodedText) => {
           onScan(decodedText);
-          scanner.stop().catch(() => {});
+          try { if (scanner.isScanning) scanner.stop().catch(() => {}); } catch {}
           setOpen(false);
         },
         () => {}
@@ -38,7 +38,7 @@ export default function BarcodeScanner({ onScan, trigger }: BarcodeScannerProps)
     return () => {
       clearTimeout(timer);
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
+        try { if (scannerRef.current.isScanning) scannerRef.current.stop().catch(() => {}); } catch {}
         scannerRef.current = null;
       }
     };
@@ -53,7 +53,7 @@ export default function BarcodeScanner({ onScan, trigger }: BarcodeScannerProps)
           <Camera className="h-4 w-4 ml-1" />📷 مسح باركود
         </Button>
       )}
-      <Dialog open={open} onOpenChange={(v) => { if (!v && scannerRef.current) scannerRef.current.stop().catch(() => {}); setOpen(v); }}>
+      <Dialog open={open} onOpenChange={(v) => { if (!v && scannerRef.current) { try { if (scannerRef.current.isScanning) scannerRef.current.stop().catch(() => {}); } catch {} } setOpen(v); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>مسح باركود</DialogTitle>
