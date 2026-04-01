@@ -26,7 +26,7 @@ export default function BarcodeScanner({ onScan, trigger }: BarcodeScannerProps)
         { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.5 },
         (decodedText) => {
           onScan(decodedText);
-          scanner.stop().catch(() => {});
+          try { if (scanner.isScanning) scanner.stop().catch(() => {}); } catch {}
           setOpen(false);
         },
         () => {}
