@@ -319,9 +319,12 @@ export default function CourierOrders() {
           </CardContent>
         </Card>
 
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="بحث بالاسم أو الهاتف أو الكود..." value={search} onChange={e => setSearch(e.target.value)} className="pr-9 bg-secondary border-border" />
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="بحث بالاسم أو الهاتف أو الكود..." value={search} onChange={e => setSearch(e.target.value)} className="pr-9 bg-secondary border-border" />
+          </div>
+          <BarcodeScanner onScan={(barcode) => { setSearch(barcode); const found = orders.find(o => o.barcode === barcode); if (found) openDetails(found); }} />
         </div>
 
         <Card className="bg-card border-border">
