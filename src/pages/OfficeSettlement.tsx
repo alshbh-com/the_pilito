@@ -47,6 +47,7 @@ export default function OfficeSettlement() {
   const [isLocked, setIsLocked] = useState(false);
   const [isClosed, setIsClosed] = useState(false);
   const [preventAdd, setPreventAdd] = useState(false);
+  const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set());
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLoadingRef = useRef(false);
 
