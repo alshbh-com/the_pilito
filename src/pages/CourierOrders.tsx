@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { LogOut, Eye, Phone, MessageSquare, Send, MapPin, AlertTriangle, Search } from 'lucide-react';
+import { LogOut, Eye, Phone, MessageSquare, Send, MapPin, AlertTriangle, Search, Camera } from 'lucide-react';
+import BarcodeScanner from '@/components/BarcodeScanner';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
 import { useCourierLocation } from '@/hooks/useCourierLocation';
