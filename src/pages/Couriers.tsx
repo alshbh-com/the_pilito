@@ -44,7 +44,7 @@ export default function Couriers() {
       .from('orders')
       .select('*, order_statuses(name, color), offices(name)')
       .eq('courier_id', selectedCourier)
-      .eq('is_closed', false)
+      .eq('is_courier_closed', false)
       .order('created_at', { ascending: false });
     setCourierOrders(data || []);
     setSelectedOrders(new Set());
@@ -60,7 +60,7 @@ export default function Couriers() {
   const closeSelected = async () => {
     if (selectedOrders.size === 0) return;
     if (!confirm(`تقفيل ${selectedOrders.size} أوردر؟`)) return;
-    await supabase.from('orders').update({ is_closed: true }).in('id', Array.from(selectedOrders));
+    await supabase.from('orders').update({ is_courier_closed: true }).in('id', Array.from(selectedOrders));
     toast.success(`تم تقفيل ${selectedOrders.size} أوردر`);
     loadCourierOrders();
   };

@@ -683,6 +683,7 @@ export type Database = {
           delivery_price: number | null
           id: string
           is_closed: boolean | null
+          is_courier_closed: boolean | null
           is_settled: boolean | null
           notes: string | null
           office_id: string | null
@@ -712,6 +713,7 @@ export type Database = {
           delivery_price?: number | null
           id?: string
           is_closed?: boolean | null
+          is_courier_closed?: boolean | null
           is_settled?: boolean | null
           notes?: string | null
           office_id?: string | null
@@ -741,6 +743,7 @@ export type Database = {
           delivery_price?: number | null
           id?: string
           is_closed?: boolean | null
+          is_courier_closed?: boolean | null
           is_settled?: boolean | null
           notes?: string | null
           office_id?: string | null

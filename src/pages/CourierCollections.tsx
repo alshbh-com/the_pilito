@@ -57,7 +57,7 @@ export default function CourierCollections() {
       .from('orders')
       .select('*, order_statuses(name, color)')
       .eq('courier_id', selectedCourier)
-      .eq('is_closed', false)
+      .eq('is_courier_closed', false)
       .order('created_at', { ascending: false });
     setOrders(orderData || []);
     setSelectedOrders(new Set());
@@ -125,7 +125,7 @@ export default function CourierCollections() {
     if (!confirm(`هل تريد تقفيل ${selectedOrders.size} أوردر؟`)) return;
 
     const ids = Array.from(selectedOrders);
-    const { error } = await supabase.from('orders').update({ is_closed: true }).in('id', ids);
+    const { error } = await supabase.from('orders').update({ is_courier_closed: true }).in('id', ids);
     if (error) {
       toast.error(error.message);
       return;
