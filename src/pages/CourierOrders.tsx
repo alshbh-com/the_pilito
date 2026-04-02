@@ -123,7 +123,7 @@ export default function CourierOrders() {
       .from('orders')
       .select('*, order_statuses(name, color), offices(name)')
       .eq('courier_id', user?.id || '')
-      .eq('is_closed', false)
+      .eq('is_courier_closed', false)
       .order('created_at', { ascending: false });
     setOrders(data || []);
   };

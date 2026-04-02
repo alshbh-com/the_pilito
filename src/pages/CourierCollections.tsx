@@ -125,7 +125,7 @@ export default function CourierCollections() {
     if (!confirm(`هل تريد تقفيل ${selectedOrders.size} أوردر؟`)) return;
 
     const ids = Array.from(selectedOrders);
-    const { error } = await supabase.from('orders').update({ is_closed: true }).in('id', ids);
+    const { error } = await supabase.from('orders').update({ is_courier_closed: true }).in('id', ids);
     if (error) {
       toast.error(error.message);
       return;
