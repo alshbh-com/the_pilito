@@ -44,7 +44,7 @@ export default function Couriers() {
       .from('orders')
       .select('*, order_statuses(name, color), offices(name)')
       .eq('courier_id', selectedCourier)
-      .eq('is_closed', false)
+      .eq('is_courier_closed', false)
       .order('created_at', { ascending: false });
     setCourierOrders(data || []);
     setSelectedOrders(new Set());
