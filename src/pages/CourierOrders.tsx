@@ -166,11 +166,6 @@ export default function CourierOrders() {
     await syncCollectionForOrder(orderId, 0);
     logActivity('مندوب غيّر حالة أوردر', { order_id: orderId, status_id: statusId });
 
-    if (statusId === postponedStatus?.id) {
-      // Keep the status as "مؤجل" but remove from courier
-      await supabase.from('orders').update({ courier_id: null }).eq('id', orderId);
-    }
-
     toast.success('تم تحديث الحالة');
     load();
   };
