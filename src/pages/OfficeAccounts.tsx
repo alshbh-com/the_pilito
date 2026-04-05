@@ -11,13 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Pencil, Trash2, Download, Printer, FileSpreadsheet } from 'lucide-react';
+import { Plus, Pencil, Trash2, Printer, FileSpreadsheet, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
-// Status filter names we care about
 const FILTER_STATUS_NAMES = [
   'تم التسليم',
   'رفض ولم يدفع شحن',
@@ -35,8 +34,11 @@ export default function OfficeAccounts() {
   const [period, setPeriod] = useState('all');
   const [payments, setPayments] = useState<any[]>([]);
   const [officeOrders, setOfficeOrders] = useState<any[]>([]);
+  const [couriers, setCouriers] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [courierCommissionRate, setCourierCommissionRate] = useState('');
+  const [officeCommissionRate, setOfficeCommissionRate] = useState('');
 
-  // Status filters
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
 
   const [advanceOpen, setAdvanceOpen] = useState(false);
@@ -52,6 +54,15 @@ export default function OfficeAccounts() {
   useEffect(() => {
     supabase.from('offices').select('id, name').order('name').then(({ data }) => setOffices(data || []));
     supabase.from('order_statuses').select('*').order('sort_order').then(({ data }) => setStatuses(data || []));
+    // Load couriers
+    const loadCouriers = async () => {
+      const { data: roles } = await supabase.from('user_roles').select('user_id').eq('role', 'courier');
+      if (roles && roles.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', roles.map(r => r.user_id));
+        setCouriers(profiles || []);
+      }
+    };
+    loadCouriers();
   }, []);
 
   useEffect(() => { loadAccounts(); }, [selectedOffice, period, offices, statuses]);
@@ -64,7 +75,7 @@ export default function OfficeAccounts() {
   const loadOfficeOrders = async () => {
     const { data } = await supabase
       .from('orders')
-      .select('id, barcode, status_id, partial_amount, price, delivery_price, is_settled, customer_code, customer_name')
+      .select('id, barcode, status_id, partial_amount, price, delivery_price, is_settled, customer_code, customer_name, customer_phone, courier_id, office_id')
       .eq('office_id', selectedOffice)
       .eq('is_closed', false)
       .order('created_at', { ascending: false });
@@ -211,7 +222,6 @@ export default function OfficeAccounts() {
   const officePaymentsList = payments.filter(p => selectedOffice === 'all' || p.office_id === selectedOffice);
   const selectedAccount = selectedOffice !== 'all' ? accounts.find(a => a.id === selectedOffice) : null;
 
-  // Filter statuses available for the checkbox filter
   const filterableStatuses = statuses.filter(s => FILTER_STATUS_NAMES.includes(s.name));
 
   const toggleStatusFilter = (statusId: string) => {
@@ -220,26 +230,47 @@ export default function OfficeAccounts() {
     );
   };
 
-  // Filtered orders based on selected statuses
-  const filteredOrders = selectedStatuses.length > 0
-    ? officeOrders.filter(o => selectedStatuses.includes(o.status_id))
-    : officeOrders;
+  // Filter orders by status AND search
+  const filteredOrders = officeOrders.filter(o => {
+    const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(o.status_id);
+    if (!matchesStatus) return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.trim().toLowerCase();
+    return (
+      (o.customer_name || '').toLowerCase().includes(q) ||
+      (o.customer_phone || '').toLowerCase().includes(q) ||
+      (o.barcode || '').toLowerCase().includes(q) ||
+      (o.customer_code || '').toLowerCase().includes(q)
+    );
+  });
 
-  // Calculate summary per status group for filtered orders
+  const courierRate = parseFloat(courierCommissionRate) || 0;
+  const officeRate = parseFloat(officeCommissionRate) || 0;
+
+  const getCourierName = (courierId: string | null) => {
+    if (!courierId) return '-';
+    return couriers.find(c => c.id === courierId)?.full_name || '-';
+  };
+
+  const getOfficeName = (officeId: string | null) => {
+    if (!officeId) return '-';
+    return offices.find(o => o.id === officeId)?.name || '-';
+  };
+
   const getStatusSummary = () => {
     const statusesToShow = selectedStatuses.length > 0
       ? filterableStatuses.filter(s => selectedStatuses.includes(s.id))
       : filterableStatuses;
 
     return statusesToShow.map(status => {
-      const orders = officeOrders.filter(o => o.status_id === status.id);
-      const total = orders.reduce((sum, o) => sum + Number(o.price || 0), 0);
-      const shipping = orders.reduce((sum, o) => sum + Number(o.delivery_price || 0), 0);
+      const ords = officeOrders.filter(o => o.status_id === status.id);
+      const total = ords.reduce((sum, o) => sum + Number(o.price || 0), 0);
+      const shipping = ords.reduce((sum, o) => sum + Number(o.delivery_price || 0), 0);
       const net = total - shipping;
       return {
         statusName: status.name,
         statusColor: status.color,
-        count: orders.length,
+        count: ords.length,
         total,
         shipping,
         net,
@@ -254,7 +285,6 @@ export default function OfficeAccounts() {
 
   const officeName = offices.find(o => o.id === selectedOffice)?.name || '';
 
-  // Export filtered data to Excel
   const exportToExcel = () => {
     if (filteredOrders.length === 0) { toast.error('لا توجد بيانات للتصدير'); return; }
     const statusName = (sid: string) => statuses.find(s => s.id === sid)?.name || '-';
@@ -263,41 +293,33 @@ export default function OfficeAccounts() {
       '#': i + 1,
       'الباركود': o.barcode || '-',
       'الكود': o.customer_code || '-',
-      'الاسم': o.customer_name || '-',
+      'العميل': o.customer_name || '-',
+      'الهاتف': o.customer_phone || '-',
+      'المكتب': getOfficeName(o.office_id),
       'السعر': Number(o.price || 0),
       'الشحن': Number(o.delivery_price || 0),
+      'عمولة المندوب': courierRate,
+      'عمولة المكتب': officeRate,
       'الصافي': Number(o.price || 0) - Number(o.delivery_price || 0),
       'الحالة': statusName(o.status_id),
+      'المندوب': getCourierName(o.courier_id),
     }));
 
-    // Add summary rows
     data.push({
       '#': '' as any,
       'الباركود': '',
       'الكود': '',
-      'الاسم': 'الإجمالي',
+      'العميل': 'الإجمالي',
+      'الهاتف': '',
+      'المكتب': '',
       'السعر': filteredOrders.reduce((s, o) => s + Number(o.price || 0), 0),
       'الشحن': filteredOrders.reduce((s, o) => s + Number(o.delivery_price || 0), 0),
+      'عمولة المندوب': courierRate * filteredOrders.length,
+      'عمولة المكتب': officeRate * filteredOrders.length,
       'الصافي': filteredOrders.reduce((s, o) => s + Number(o.price || 0) - Number(o.delivery_price || 0), 0),
       'الحالة': '',
+      'المندوب': '',
     });
-
-    // Add status breakdown
-    if (statusSummary.length > 0) {
-      data.push({ '#': '' as any, 'الباركود': '', 'الكود': '', 'الاسم': '--- ملخص الحالات ---', 'السعر': '' as any, 'الشحن': '' as any, 'الصافي': '' as any, 'الحالة': '' });
-      statusSummary.forEach(s => {
-        data.push({
-          '#': '' as any,
-          'الباركود': '',
-          'الكود': '',
-          'الاسم': `${s.statusName} (${s.count})`,
-          'السعر': s.total,
-          'الشحن': s.shipping,
-          'الصافي': s.net,
-          'الحالة': '',
-        });
-      });
-    }
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -306,7 +328,6 @@ export default function OfficeAccounts() {
     toast.success('تم التصدير بنجاح');
   };
 
-  // Print filtered data
   const printSheet = () => {
     if (filteredOrders.length === 0) { toast.error('لا توجد بيانات للطباعة'); return; }
     const statusName = (sid: string) => statuses.find(s => s.id === sid)?.name || '-';
@@ -316,30 +337,25 @@ export default function OfficeAccounts() {
     const orderRows = filteredOrders.map((o, i) => `<tr>
       <td>${i + 1}</td>
       <td>${o.barcode || '-'}</td>
-      <td>${o.customer_code || '-'}</td>
       <td>${o.customer_name || '-'}</td>
+      <td>${o.customer_phone || '-'}</td>
       <td>${Number(o.price || 0)}</td>
       <td>${Number(o.delivery_price || 0)}</td>
+      <td>${courierRate}</td>
+      <td>${officeRate}</td>
       <td>${Number(o.price || 0) - Number(o.delivery_price || 0)}</td>
       <td>${statusName(o.status_id)}</td>
+      <td>${getCourierName(o.courier_id)}</td>
     </tr>`).join('');
 
     const totalPrice = filteredOrders.reduce((s, o) => s + Number(o.price || 0), 0);
     const totalShipping = filteredOrders.reduce((s, o) => s + Number(o.delivery_price || 0), 0);
     const totalNet = totalPrice - totalShipping;
 
-    const summaryRows = statusSummary.map(s => `<tr>
-      <td style="background:${s.statusColor}20; font-weight:bold;">${s.statusName}</td>
-      <td>${s.count}</td>
-      <td>${s.total}</td>
-      <td>${s.shipping}</td>
-      <td style="font-weight:bold;">${s.net}</td>
-    </tr>`).join('');
-
     w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">
     <title>حسابات ${officeName}</title>
     <style>
-      @page { size: A4; margin: 8mm; }
+      @page { size: A4 landscape; margin: 8mm; }
       body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 11px; margin: 0; padding: 10px; }
       .header { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 5px; }
       .sub-header { text-align: center; font-size: 12px; color: #666; margin-bottom: 12px; }
@@ -347,40 +363,25 @@ export default function OfficeAccounts() {
       th, td { border: 1px solid #333; padding: 4px 6px; text-align: right; font-size: 10px; }
       th { background: #f0f0f0; font-weight: bold; }
       .total-row { background: #e8f4e8; font-weight: bold; }
-      .summary-title { font-size: 14px; font-weight: bold; margin: 10px 0 5px; }
     </style></head><body>
     <div class="header">The Pilito - حسابات ${officeName}</div>
     <div class="sub-header">${format(new Date(), 'dd/MM/yyyy')}</div>
     
     <table>
-      <thead><tr><th>#</th><th>الباركود</th><th>الكود</th><th>الاسم</th><th>الإجمالي</th><th>العمولة (شحن)</th><th>الصافي</th><th>الحالة</th></tr></thead>
+      <thead><tr><th>#</th><th>الباركود</th><th>العميل</th><th>الهاتف</th><th>الإجمالي</th><th>الشحن</th><th>عمولة المندوب</th><th>عمولة المكتب</th><th>الصافي</th><th>الحالة</th><th>المندوب</th></tr></thead>
       <tbody>
         ${orderRows}
         <tr class="total-row">
           <td colspan="4">الإجمالي (${filteredOrders.length} أوردر)</td>
           <td>${totalPrice}</td>
           <td>${totalShipping}</td>
+          <td>${courierRate * filteredOrders.length}</td>
+          <td>${officeRate * filteredOrders.length}</td>
           <td>${totalNet}</td>
-          <td></td>
+          <td colspan="2"></td>
         </tr>
       </tbody>
     </table>
-
-    ${statusSummary.length > 0 ? `
-    <div class="summary-title">ملخص حسب الحالة</div>
-    <table>
-      <thead><tr><th>الحالة</th><th>العدد</th><th>الإجمالي</th><th>العمولة (شحن)</th><th>الصافي</th></tr></thead>
-      <tbody>
-        ${summaryRows}
-        <tr class="total-row">
-          <td>المجموع</td>
-          <td>${statusSummary.reduce((s, x) => s + x.count, 0)}</td>
-          <td>${summaryTotalAll}</td>
-          <td>${summaryShippingAll}</td>
-          <td>${summaryNetAll}</td>
-        </tr>
-      </tbody>
-    </table>` : ''}
     </body></html>`);
     w.document.close();
     w.focus();
@@ -479,6 +480,48 @@ export default function OfficeAccounts() {
                   إلغاء الفلتر
                 </Button>
               )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Search + commission rates */}
+      {selectedOffice !== 'all' && (
+        <Card className="bg-card border-border">
+          <CardContent className="p-3">
+            <div className="flex flex-wrap gap-3 items-end">
+              <div className="flex-1 min-w-[200px]">
+                <Label className="text-xs">بحث بالاسم أو رقم الهاتف أو الباركود</Label>
+                <div className="relative">
+                  <Search className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="بحث..."
+                    className="bg-secondary border-border pr-8"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">عمولة المندوب (لكل أوردر)</Label>
+                <Input
+                  type="number"
+                  value={courierCommissionRate}
+                  onChange={e => setCourierCommissionRate(e.target.value)}
+                  className="w-32 bg-secondary border-border"
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">عمولة المكتب (لكل أوردر)</Label>
+                <Input
+                  type="number"
+                  value={officeCommissionRate}
+                  onChange={e => setOfficeCommissionRate(e.target.value)}
+                  className="w-32 bg-secondary border-border"
+                  placeholder="0"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -601,12 +644,16 @@ export default function OfficeAccounts() {
                 <TableHeader>
                   <TableRow className="border-border">
                     <TableHead className="text-right">الباركود</TableHead>
-                    <TableHead className="text-right">الكود</TableHead>
-                    <TableHead className="text-right">الاسم</TableHead>
+                    <TableHead className="text-right">العميل</TableHead>
+                    <TableHead className="text-right">الهاتف</TableHead>
+                    <TableHead className="text-right">المكتب</TableHead>
                     <TableHead className="text-right">الإجمالي</TableHead>
-                    <TableHead className="text-right">العمولة (شحن)</TableHead>
+                    <TableHead className="text-right">الشحن</TableHead>
+                    <TableHead className="text-right">عمولة المندوب</TableHead>
+                    <TableHead className="text-right">عمولة المكتب</TableHead>
                     <TableHead className="text-right">الصافي</TableHead>
                     <TableHead className="text-right">الحالة</TableHead>
+                    <TableHead className="text-right">المندوب</TableHead>
                     <TableHead className="text-right">خالص</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -619,14 +666,18 @@ export default function OfficeAccounts() {
                     return (
                       <TableRow key={o.id} className="border-border">
                         <TableCell className="font-mono text-xs">{o.barcode || '-'}</TableCell>
-                        <TableCell className="font-mono text-xs">{o.customer_code || '-'}</TableCell>
                         <TableCell className="text-sm">{o.customer_name || '-'}</TableCell>
+                        <TableCell className="text-sm">{o.customer_phone || '-'}</TableCell>
+                        <TableCell className="text-sm">{getOfficeName(o.office_id)}</TableCell>
                         <TableCell className="text-sm font-bold">{price} ج.م</TableCell>
                         <TableCell className="text-sm">{shipping} ج.م</TableCell>
+                        <TableCell className="text-sm text-amber-500 font-bold">{courierRate} ج.م</TableCell>
+                        <TableCell className="text-sm text-blue-500 font-bold">{officeRate} ج.م</TableCell>
                         <TableCell className="text-sm font-bold text-primary">{net} ج.م</TableCell>
                         <TableCell>
                           {status ? <Badge style={{ backgroundColor: status.color }} className="text-xs">{status.name}</Badge> : '-'}
                         </TableCell>
+                        <TableCell className="text-sm">{getCourierName(o.courier_id)}</TableCell>
                         <TableCell>
                           <Button size="sm" variant={o.is_settled ? 'default' : 'outline'} className={`text-xs h-6 px-2 ${o.is_settled ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`} onClick={() => toggleSettled(o.id, !o.is_settled)}>
                             {o.is_settled ? '✓ خالص' : 'خالص'}
@@ -638,11 +689,13 @@ export default function OfficeAccounts() {
                 </TableBody>
                 <TableFooter>
                   <TableRow className="border-border bg-muted/50">
-                    <TableCell colSpan={3} className="font-bold">الإجمالي ({filteredOrders.length})</TableCell>
+                    <TableCell colSpan={4} className="font-bold">الإجمالي ({filteredOrders.length})</TableCell>
                     <TableCell className="font-bold">{filteredOrders.reduce((s, o) => s + Number(o.price || 0), 0)} ج.م</TableCell>
                     <TableCell className="font-bold">{filteredOrders.reduce((s, o) => s + Number(o.delivery_price || 0), 0)} ج.م</TableCell>
+                    <TableCell className="font-bold text-amber-500">{courierRate * filteredOrders.length} ج.م</TableCell>
+                    <TableCell className="font-bold text-blue-500">{officeRate * filteredOrders.length} ج.م</TableCell>
                     <TableCell className="font-bold text-primary">{filteredOrders.reduce((s, o) => s + Number(o.price || 0) - Number(o.delivery_price || 0), 0)} ج.م</TableCell>
-                    <TableCell colSpan={2} />
+                    <TableCell colSpan={3} />
                   </TableRow>
                 </TableFooter>
               </Table>
