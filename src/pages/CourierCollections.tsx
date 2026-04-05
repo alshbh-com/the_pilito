@@ -9,10 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Lock } from 'lucide-react';
+import { Plus, Trash2, Lock, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
+
+// Group statuses for filter
+const DELIVERY_STATUSES = ['تم التسليم', 'رفض ودفع شحن', 'رفض ولم يدفع شحن', 'تسليم جزئي', 'الشحن على الراسل'];
+const RETURN_STATUSES = ['لم يرد', 'تهرب', 'ملغي', 'لايرد'];
 
 export default function CourierCollections() {
   const { user, isOwner } = useAuth();
@@ -29,6 +33,8 @@ export default function CourierCollections() {
   const [bonusAmount, setBonusAmount] = useState('');
   const [bonusReason, setBonusReason] = useState('');
   const [orderNotes, setOrderNotes] = useState<Record<string, string>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -61,7 +67,6 @@ export default function CourierCollections() {
       .order('created_at', { ascending: false });
     setOrders(orderData || []);
     setSelectedOrders(new Set());
-    // Initialize notes from orders
     const notes: Record<string, string> = {};
     (orderData || []).forEach((o: any) => { notes[o.id] = o.notes || ''; });
     setOrderNotes(notes);
@@ -103,6 +108,28 @@ export default function CourierCollections() {
     setCommissionStatuses(prev => prev.includes(statusId) ? prev.filter(s => s !== statusId) : [...prev, statusId]);
   };
 
+  const toggleStatusFilter = (statusId: string) => {
+    setStatusFilter(prev => prev.includes(statusId) ? prev.filter(s => s !== statusId) : [...prev, statusId]);
+  };
+
+  // Grouped filter statuses
+  const deliveryFilterStatuses = statuses.filter(s => DELIVERY_STATUSES.includes(s.name));
+  const returnFilterStatuses = statuses.filter(s => RETURN_STATUSES.includes(s.name));
+
+  // Filter orders by status and search
+  const filteredOrders = orders.filter(o => {
+    const matchesStatus = statusFilter.length === 0 || statusFilter.includes(o.status_id);
+    if (!matchesStatus) return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.trim().toLowerCase();
+    return (
+      (o.barcode || '').toLowerCase().includes(q) ||
+      (o.customer_name || '').toLowerCase().includes(q) ||
+      (o.customer_phone || '').toLowerCase().includes(q) ||
+      (o.customer_code || '').toLowerCase().includes(q)
+    );
+  });
+
   const toggleSelectOrder = (orderId: string) => {
     setSelectedOrders(prev => {
       const next = new Set(prev);
@@ -113,11 +140,11 @@ export default function CourierCollections() {
   };
 
   const toggleSelectAllOrders = () => {
-    if (orders.length > 0 && selectedOrders.size === orders.length) {
+    if (filteredOrders.length > 0 && selectedOrders.size === filteredOrders.length) {
       setSelectedOrders(new Set());
       return;
     }
-    setSelectedOrders(new Set(orders.map(o => o.id)));
+    setSelectedOrders(new Set(filteredOrders.map(o => o.id)));
   };
 
   const closeSelectedOrders = async () => {
@@ -277,14 +304,63 @@ export default function CourierCollections() {
             </Card>
           )}
 
+          {/* Search and Status Filters */}
           <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base">أوردرات المندوب ({orders.length})</CardTitle></CardHeader>
+            <CardContent className="p-3 space-y-3">
+              <div className="relative">
+                <Search className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="بحث بالباركود أو اسم العميل أو رقم الهاتف..."
+                  className="bg-secondary border-border pr-8"
+                />
+              </div>
+              <div>
+                <p className="text-sm font-semibold mb-2">فلتر حسب الحالة:</p>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-xs text-muted-foreground ml-1">تسليمات:</span>
+                    {deliveryFilterStatuses.map(s => (
+                      <label key={s.id} className="flex items-center gap-1 cursor-pointer text-sm">
+                        <Checkbox checked={statusFilter.includes(s.id)} onCheckedChange={() => toggleStatusFilter(s.id)} />
+                        <Badge style={{ backgroundColor: s.color }} className="text-xs">{s.name}</Badge>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-xs text-muted-foreground ml-1">مرتجعات:</span>
+                    {returnFilterStatuses.map(s => (
+                      <label key={s.id} className="flex items-center gap-1 cursor-pointer text-sm">
+                        <Checkbox checked={statusFilter.includes(s.id)} onCheckedChange={() => toggleStatusFilter(s.id)} />
+                        <Badge style={{ backgroundColor: s.color }} className="text-xs">{s.name}</Badge>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="text-xs h-6" onClick={() => {
+                      const allIds = [...deliveryFilterStatuses, ...returnFilterStatuses].map(s => s.id);
+                      setStatusFilter(allIds);
+                    }}>الكل</Button>
+                    {statusFilter.length > 0 && (
+                      <Button size="sm" variant="ghost" className="text-xs h-6" onClick={() => setStatusFilter([])}>
+                        إلغاء الفلتر
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardHeader><CardTitle className="text-base">أوردرات المندوب ({filteredOrders.length})</CardTitle></CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border">
-                      <TableHead className="text-right w-10"><Checkbox checked={orders.length > 0 && selectedOrders.size === orders.length} onCheckedChange={toggleSelectAllOrders} /></TableHead>
+                      <TableHead className="text-right w-10"><Checkbox checked={filteredOrders.length > 0 && selectedOrders.size === filteredOrders.length} onCheckedChange={toggleSelectAllOrders} /></TableHead>
                       <TableHead className="text-right">الباركود</TableHead>
                       <TableHead className="text-right">الكود</TableHead>
                       <TableHead className="text-right">العميل</TableHead>
@@ -297,9 +373,9 @@ export default function CourierCollections() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {orders.length === 0 ? (
+                    {filteredOrders.length === 0 ? (
                       <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-4">لا توجد أوردرات</TableCell></TableRow>
-                    ) : orders.map(o => {
+                    ) : filteredOrders.map(o => {
                       const collected = getCollectedAmount(o);
                       return (
                         <TableRow key={o.id} className="border-border">
