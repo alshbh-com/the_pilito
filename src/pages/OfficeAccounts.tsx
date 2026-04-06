@@ -17,13 +17,6 @@ import { logActivity } from '@/lib/activityLogger';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
-const FILTER_STATUS_NAMES = [
-  'تم التسليم',
-  'رفض ولم يدفع شحن',
-  'رفض ودفع شحن',
-  'تسليم جزئي',
-  'الشحن على الراسل',
-];
 
 export default function OfficeAccounts() {
   const { isOwner } = useAuth();
@@ -222,7 +215,7 @@ export default function OfficeAccounts() {
   const officePaymentsList = payments.filter(p => selectedOffice === 'all' || p.office_id === selectedOffice);
   const selectedAccount = selectedOffice !== 'all' ? accounts.find(a => a.id === selectedOffice) : null;
 
-  const filterableStatuses = statuses.filter(s => FILTER_STATUS_NAMES.includes(s.name));
+  const filterableStatuses = statuses;
 
   const toggleStatusFilter = (statusId: string) => {
     setSelectedStatuses(prev =>
