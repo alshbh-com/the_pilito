@@ -68,7 +68,7 @@ export default function OfficeAccounts() {
   const loadOfficeOrders = async () => {
     const { data } = await supabase
       .from('orders')
-      .select('id, barcode, status_id, partial_amount, price, delivery_price, is_settled, customer_code, customer_name, customer_phone, courier_id, office_id')
+      .select('id, barcode, status_id, partial_amount, price, delivery_price, is_settled, customer_code, customer_name, customer_phone, courier_id, office_id, created_at')
       .eq('office_id', selectedOffice)
       .eq('is_closed', false)
       .order('created_at', { ascending: false });
@@ -636,18 +636,19 @@ export default function OfficeAccounts() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-border">
-                    <TableHead className="text-right">الباركود</TableHead>
-                    <TableHead className="text-right">العميل</TableHead>
-                    <TableHead className="text-right">الهاتف</TableHead>
-                    <TableHead className="text-right">المكتب</TableHead>
-                    <TableHead className="text-right">الإجمالي</TableHead>
-                    <TableHead className="text-right">الشحن</TableHead>
-                    <TableHead className="text-right">عمولة المندوب</TableHead>
-                    <TableHead className="text-right">عمولة المكتب</TableHead>
-                    <TableHead className="text-right">الصافي</TableHead>
-                    <TableHead className="text-right">الحالة</TableHead>
-                    <TableHead className="text-right">المندوب</TableHead>
-                    <TableHead className="text-right">خالص</TableHead>
+                     <TableHead className="text-right">الباركود</TableHead>
+                     <TableHead className="text-right">العميل</TableHead>
+                     <TableHead className="text-right">الهاتف</TableHead>
+                     <TableHead className="text-right">المكتب</TableHead>
+                     <TableHead className="text-right">الإجمالي</TableHead>
+                     <TableHead className="text-right">الشحن</TableHead>
+                     <TableHead className="text-right">عمولة المندوب</TableHead>
+                     <TableHead className="text-right">عمولة المكتب</TableHead>
+                     <TableHead className="text-right">الصافي</TableHead>
+                     <TableHead className="text-right">الحالة</TableHead>
+                     <TableHead className="text-right">المندوب</TableHead>
+                     <TableHead className="text-right">التاريخ</TableHead>
+                     <TableHead className="text-right">خالص</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -671,6 +672,7 @@ export default function OfficeAccounts() {
                           {status ? <Badge style={{ backgroundColor: status.color }} className="text-xs">{status.name}</Badge> : '-'}
                         </TableCell>
                         <TableCell className="text-sm">{getCourierName(o.courier_id)}</TableCell>
+                        <TableCell className="text-xs">{o.created_at ? new Date(o.created_at).toLocaleDateString('ar-EG') : '-'}</TableCell>
                         <TableCell>
                           <Button size="sm" variant={o.is_settled ? 'default' : 'outline'} className={`text-xs h-6 px-2 ${o.is_settled ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`} onClick={() => toggleSettled(o.id, !o.is_settled)}>
                             {o.is_settled ? '✓ خالص' : 'خالص'}
@@ -688,7 +690,7 @@ export default function OfficeAccounts() {
                     <TableCell className="font-bold text-amber-500">{courierRate * filteredOrders.length} ج.م</TableCell>
                     <TableCell className="font-bold text-blue-500">{officeRate * filteredOrders.length} ج.م</TableCell>
                     <TableCell className="font-bold text-primary">{filteredOrders.reduce((s, o) => s + Number(o.price || 0) - Number(o.delivery_price || 0), 0)} ج.م</TableCell>
-                    <TableCell colSpan={3} />
+                    <TableCell colSpan={4} />
                   </TableRow>
                 </TableFooter>
               </Table>
