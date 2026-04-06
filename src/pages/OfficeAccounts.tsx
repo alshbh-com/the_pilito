@@ -636,18 +636,19 @@ export default function OfficeAccounts() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-border">
-                    <TableHead className="text-right">الباركود</TableHead>
-                    <TableHead className="text-right">العميل</TableHead>
-                    <TableHead className="text-right">الهاتف</TableHead>
-                    <TableHead className="text-right">المكتب</TableHead>
-                    <TableHead className="text-right">الإجمالي</TableHead>
-                    <TableHead className="text-right">الشحن</TableHead>
-                    <TableHead className="text-right">عمولة المندوب</TableHead>
-                    <TableHead className="text-right">عمولة المكتب</TableHead>
-                    <TableHead className="text-right">الصافي</TableHead>
-                    <TableHead className="text-right">الحالة</TableHead>
-                    <TableHead className="text-right">المندوب</TableHead>
-                    <TableHead className="text-right">خالص</TableHead>
+                     <TableHead className="text-right">الباركود</TableHead>
+                     <TableHead className="text-right">العميل</TableHead>
+                     <TableHead className="text-right">الهاتف</TableHead>
+                     <TableHead className="text-right">المكتب</TableHead>
+                     <TableHead className="text-right">الإجمالي</TableHead>
+                     <TableHead className="text-right">الشحن</TableHead>
+                     <TableHead className="text-right">عمولة المندوب</TableHead>
+                     <TableHead className="text-right">عمولة المكتب</TableHead>
+                     <TableHead className="text-right">الصافي</TableHead>
+                     <TableHead className="text-right">الحالة</TableHead>
+                     <TableHead className="text-right">المندوب</TableHead>
+                     <TableHead className="text-right">التاريخ</TableHead>
+                     <TableHead className="text-right">خالص</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
