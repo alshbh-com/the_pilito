@@ -17,11 +17,6 @@ import { logActivity } from '@/lib/activityLogger';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
-const FILTER_STATUS_NAMES: string[] = []; // empty = show all statuses dynamically
-  'رفض ودفع شحن',
-  'تسليم جزئي',
-  'الشحن على الراسل',
-];
 
 export default function OfficeAccounts() {
   const { isOwner } = useAuth();
