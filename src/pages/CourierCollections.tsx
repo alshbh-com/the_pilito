@@ -14,15 +14,12 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
 
-// Group statuses for filter
-const DELIVERY_STATUSES = ['تم التسليم', 'رفض ودفع شحن', 'رفض ولم يدفع شحن', 'تسليم جزئي', 'الشحن على الراسل'];
-const RETURN_STATUSES = ['لم يرد', 'تهرب', 'ملغي', 'لايرد'];
-
 export default function CourierCollections() {
   const { user, isOwner } = useAuth();
   const [couriers, setCouriers] = useState<any[]>([]);
   const [selectedCourier, setSelectedCourier] = useState('');
   const [statuses, setStatuses] = useState<any[]>([]);
+  const [offices, setOffices] = useState<any[]>([]);
   const [commissionPerOrder, setCommissionPerOrder] = useState('');
   const [commissionStatuses, setCommissionStatuses] = useState<string[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
