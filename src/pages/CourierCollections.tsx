@@ -42,6 +42,8 @@ export default function CourierCollections() {
       }
       const { data: sts } = await supabase.from('order_statuses').select('*').order('sort_order');
       setStatuses(sts || []);
+      const { data: officeData } = await supabase.from('offices').select('id, name').order('name');
+      setOffices(officeData || []);
     };
     load();
   }, []);
