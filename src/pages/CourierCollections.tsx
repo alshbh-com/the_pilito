@@ -14,15 +14,12 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
 
-// Group statuses for filter
-const DELIVERY_STATUSES = ['تم التسليم', 'رفض ودفع شحن', 'رفض ولم يدفع شحن', 'تسليم جزئي', 'الشحن على الراسل'];
-const RETURN_STATUSES = ['لم يرد', 'تهرب', 'ملغي', 'لايرد'];
-
 export default function CourierCollections() {
   const { user, isOwner } = useAuth();
   const [couriers, setCouriers] = useState<any[]>([]);
   const [selectedCourier, setSelectedCourier] = useState('');
   const [statuses, setStatuses] = useState<any[]>([]);
+  const [offices, setOffices] = useState<any[]>([]);
   const [commissionPerOrder, setCommissionPerOrder] = useState('');
   const [commissionStatuses, setCommissionStatuses] = useState<string[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -45,6 +42,8 @@ export default function CourierCollections() {
       }
       const { data: sts } = await supabase.from('order_statuses').select('*').order('sort_order');
       setStatuses(sts || []);
+      const { data: officeData } = await supabase.from('offices').select('id, name').order('name');
+      setOffices(officeData || []);
     };
     load();
   }, []);
@@ -112,9 +111,7 @@ export default function CourierCollections() {
     setStatusFilter(prev => prev.includes(statusId) ? prev.filter(s => s !== statusId) : [...prev, statusId]);
   };
 
-  // Grouped filter statuses
-  const deliveryFilterStatuses = statuses.filter(s => DELIVERY_STATUSES.includes(s.name));
-  const returnFilterStatuses = statuses.filter(s => RETURN_STATUSES.includes(s.name));
+  const getOfficeName = (officeId: string) => offices.find(o => o.id === officeId)?.name || '-';
 
   // Filter orders by status and search
   const filteredOrders = orders.filter(o => {
@@ -318,36 +315,21 @@ export default function CourierCollections() {
               </div>
               <div>
                 <p className="text-sm font-semibold mb-2">فلتر حسب الحالة:</p>
-                <div className="space-y-2">
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-xs text-muted-foreground ml-1">تسليمات:</span>
-                    {deliveryFilterStatuses.map(s => (
-                      <label key={s.id} className="flex items-center gap-1 cursor-pointer text-sm">
-                        <Checkbox checked={statusFilter.includes(s.id)} onCheckedChange={() => toggleStatusFilter(s.id)} />
-                        <Badge style={{ backgroundColor: s.color }} className="text-xs">{s.name}</Badge>
-                      </label>
-                    ))}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-xs text-muted-foreground ml-1">مرتجعات:</span>
-                    {returnFilterStatuses.map(s => (
-                      <label key={s.id} className="flex items-center gap-1 cursor-pointer text-sm">
-                        <Checkbox checked={statusFilter.includes(s.id)} onCheckedChange={() => toggleStatusFilter(s.id)} />
-                        <Badge style={{ backgroundColor: s.color }} className="text-xs">{s.name}</Badge>
-                      </label>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="text-xs h-6" onClick={() => {
-                      const allIds = [...deliveryFilterStatuses, ...returnFilterStatuses].map(s => s.id);
-                      setStatusFilter(allIds);
-                    }}>الكل</Button>
-                    {statusFilter.length > 0 && (
-                      <Button size="sm" variant="ghost" className="text-xs h-6" onClick={() => setStatusFilter([])}>
-                        إلغاء الفلتر
-                      </Button>
-                    )}
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  {statuses.map(s => (
+                    <label key={s.id} className="flex items-center gap-1 cursor-pointer text-sm">
+                      <Checkbox checked={statusFilter.includes(s.id)} onCheckedChange={() => toggleStatusFilter(s.id)} />
+                      <Badge style={{ backgroundColor: s.color }} className="text-xs">{s.name}</Badge>
+                    </label>
+                  ))}
+                  <Button size="sm" variant="outline" className="text-xs h-6" onClick={() => {
+                    setStatusFilter(statuses.map(s => s.id));
+                  }}>الكل</Button>
+                  {statusFilter.length > 0 && (
+                    <Button size="sm" variant="ghost" className="text-xs h-6" onClick={() => setStatusFilter([])}>
+                      إلغاء الفلتر
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -361,12 +343,14 @@ export default function CourierCollections() {
                   <TableHeader>
                     <TableRow className="border-border">
                       <TableHead className="text-right w-10"><Checkbox checked={filteredOrders.length > 0 && selectedOrders.size === filteredOrders.length} onCheckedChange={toggleSelectAllOrders} /></TableHead>
-                      <TableHead className="text-right">الباركود</TableHead>
                       <TableHead className="text-right">الكود</TableHead>
+                      <TableHead className="text-right">الباركود</TableHead>
+                      <TableHead className="text-right">التاريخ</TableHead>
                       <TableHead className="text-right">العميل</TableHead>
-                      <TableHead className="text-right">السعر</TableHead>
-                      <TableHead className="text-right">التوصيل</TableHead>
-                      <TableHead className="text-right">الإجمالي</TableHead>
+                      <TableHead className="text-right">الهاتف</TableHead>
+                      <TableHead className="text-right">الراسل</TableHead>
+                      <TableHead className="text-right">العنوان</TableHead>
+                      <TableHead className="text-right">المبلغ</TableHead>
                       <TableHead className="text-right">الحالة</TableHead>
                       <TableHead className="text-right">التحصيل</TableHead>
                       <TableHead className="text-right">تعليق</TableHead>
@@ -374,17 +358,19 @@ export default function CourierCollections() {
                   </TableHeader>
                   <TableBody>
                     {filteredOrders.length === 0 ? (
-                      <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-4">لا توجد أوردرات</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-4">لا توجد أوردرات</TableCell></TableRow>
                     ) : filteredOrders.map(o => {
                       const collected = getCollectedAmount(o);
                       return (
                         <TableRow key={o.id} className="border-border">
                           <TableCell><Checkbox checked={selectedOrders.has(o.id)} onCheckedChange={() => toggleSelectOrder(o.id)} /></TableCell>
-                          <TableCell className="font-mono text-xs">{o.barcode || '-'}</TableCell>
                           <TableCell className="font-mono text-xs">{o.customer_code || '-'}</TableCell>
-                          <TableCell>{o.customer_name}</TableCell>
-                          <TableCell>{o.price} ج.م</TableCell>
-                          <TableCell>{o.delivery_price} ج.م</TableCell>
+                          <TableCell className="font-mono text-xs">{o.barcode || '-'}</TableCell>
+                          <TableCell className="text-xs">{o.created_at ? new Date(o.created_at).toLocaleDateString('ar-EG') : '-'}</TableCell>
+                          <TableCell className="text-sm">{o.customer_name || '-'}</TableCell>
+                          <TableCell className="text-xs">{o.customer_phone || '-'}</TableCell>
+                          <TableCell className="text-xs">{getOfficeName(o.office_id)}</TableCell>
+                          <TableCell className="text-xs">{o.address || '-'}</TableCell>
                           <TableCell className="font-bold">{Number(o.price) + Number(o.delivery_price)} ج.م</TableCell>
                           <TableCell>
                             <Badge style={{ backgroundColor: o.order_statuses?.color }} className="text-xs">
