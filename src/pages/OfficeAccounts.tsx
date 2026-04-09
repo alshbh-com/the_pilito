@@ -647,7 +647,7 @@ export default function OfficeAccounts() {
                      <TableHead className="text-right">الصافي</TableHead>
                      <TableHead className="text-right">الحالة</TableHead>
                      <TableHead className="text-right">المندوب</TableHead>
-                     <TableHead className="text-right">التاريخ</TableHead>
+                     <TableHead className="text-right hidden sm:table-cell">التاريخ</TableHead>
                      <TableHead className="text-right">خالص</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -657,9 +657,15 @@ export default function OfficeAccounts() {
                     const price = Number(o.price || 0);
                     const shipping = Number(o.delivery_price || 0);
                     const net = price - shipping;
+                    const createdDate = o.created_at ? new Date(o.created_at).toLocaleDateString('ar-EG') : '-';
                     return (
                       <TableRow key={o.id} className="border-border">
-                        <TableCell className="font-mono text-xs">{o.barcode || '-'}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          <div className="space-y-1">
+                            <div>{o.barcode || '-'}</div>
+                            <div className="text-[11px] text-muted-foreground sm:hidden">{createdDate}</div>
+                          </div>
+                        </TableCell>
                         <TableCell className="text-sm">{o.customer_name || '-'}</TableCell>
                         <TableCell className="text-sm">{o.customer_phone || '-'}</TableCell>
                         <TableCell className="text-sm">{getOfficeName(o.office_id)}</TableCell>
@@ -672,7 +678,7 @@ export default function OfficeAccounts() {
                           {status ? <Badge style={{ backgroundColor: status.color }} className="text-xs">{status.name}</Badge> : '-'}
                         </TableCell>
                         <TableCell className="text-sm">{getCourierName(o.courier_id)}</TableCell>
-                        <TableCell className="text-xs">{o.created_at ? new Date(o.created_at).toLocaleDateString('ar-EG') : '-'}</TableCell>
+                        <TableCell className="text-xs hidden sm:table-cell">{createdDate}</TableCell>
                         <TableCell>
                           <Button size="sm" variant={o.is_settled ? 'default' : 'outline'} className={`text-xs h-6 px-2 ${o.is_settled ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`} onClick={() => toggleSettled(o.id, !o.is_settled)}>
                             {o.is_settled ? '✓ خالص' : 'خالص'}
