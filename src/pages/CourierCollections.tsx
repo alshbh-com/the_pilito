@@ -111,9 +111,7 @@ export default function CourierCollections() {
     setStatusFilter(prev => prev.includes(statusId) ? prev.filter(s => s !== statusId) : [...prev, statusId]);
   };
 
-  // Grouped filter statuses
-  const deliveryFilterStatuses = statuses.filter(s => DELIVERY_STATUSES.includes(s.name));
-  const returnFilterStatuses = statuses.filter(s => RETURN_STATUSES.includes(s.name));
+  const getOfficeName = (officeId: string) => offices.find(o => o.id === officeId)?.name || '-';
 
   // Filter orders by status and search
   const filteredOrders = orders.filter(o => {
