@@ -343,12 +343,14 @@ export default function CourierCollections() {
                   <TableHeader>
                     <TableRow className="border-border">
                       <TableHead className="text-right w-10"><Checkbox checked={filteredOrders.length > 0 && selectedOrders.size === filteredOrders.length} onCheckedChange={toggleSelectAllOrders} /></TableHead>
-                      <TableHead className="text-right">الباركود</TableHead>
                       <TableHead className="text-right">الكود</TableHead>
+                      <TableHead className="text-right">الباركود</TableHead>
+                      <TableHead className="text-right">التاريخ</TableHead>
                       <TableHead className="text-right">العميل</TableHead>
-                      <TableHead className="text-right">السعر</TableHead>
-                      <TableHead className="text-right">التوصيل</TableHead>
-                      <TableHead className="text-right">الإجمالي</TableHead>
+                      <TableHead className="text-right">الهاتف</TableHead>
+                      <TableHead className="text-right">الراسل</TableHead>
+                      <TableHead className="text-right">العنوان</TableHead>
+                      <TableHead className="text-right">المبلغ</TableHead>
                       <TableHead className="text-right">الحالة</TableHead>
                       <TableHead className="text-right">التحصيل</TableHead>
                       <TableHead className="text-right">تعليق</TableHead>
@@ -356,17 +358,19 @@ export default function CourierCollections() {
                   </TableHeader>
                   <TableBody>
                     {filteredOrders.length === 0 ? (
-                      <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-4">لا توجد أوردرات</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-4">لا توجد أوردرات</TableCell></TableRow>
                     ) : filteredOrders.map(o => {
                       const collected = getCollectedAmount(o);
                       return (
                         <TableRow key={o.id} className="border-border">
                           <TableCell><Checkbox checked={selectedOrders.has(o.id)} onCheckedChange={() => toggleSelectOrder(o.id)} /></TableCell>
-                          <TableCell className="font-mono text-xs">{o.barcode || '-'}</TableCell>
                           <TableCell className="font-mono text-xs">{o.customer_code || '-'}</TableCell>
-                          <TableCell>{o.customer_name}</TableCell>
-                          <TableCell>{o.price} ج.م</TableCell>
-                          <TableCell>{o.delivery_price} ج.م</TableCell>
+                          <TableCell className="font-mono text-xs">{o.barcode || '-'}</TableCell>
+                          <TableCell className="text-xs">{o.created_at ? new Date(o.created_at).toLocaleDateString('ar-EG') : '-'}</TableCell>
+                          <TableCell className="text-sm">{o.customer_name || '-'}</TableCell>
+                          <TableCell className="text-xs">{o.customer_phone || '-'}</TableCell>
+                          <TableCell className="text-xs">{getOfficeName(o.office_id)}</TableCell>
+                          <TableCell className="text-xs">{o.address || '-'}</TableCell>
                           <TableCell className="font-bold">{Number(o.price) + Number(o.delivery_price)} ج.م</TableCell>
                           <TableCell>
                             <Badge style={{ backgroundColor: o.order_statuses?.color }} className="text-xs">
