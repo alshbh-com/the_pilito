@@ -315,36 +315,21 @@ export default function CourierCollections() {
               </div>
               <div>
                 <p className="text-sm font-semibold mb-2">فلتر حسب الحالة:</p>
-                <div className="space-y-2">
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-xs text-muted-foreground ml-1">تسليمات:</span>
-                    {deliveryFilterStatuses.map(s => (
-                      <label key={s.id} className="flex items-center gap-1 cursor-pointer text-sm">
-                        <Checkbox checked={statusFilter.includes(s.id)} onCheckedChange={() => toggleStatusFilter(s.id)} />
-                        <Badge style={{ backgroundColor: s.color }} className="text-xs">{s.name}</Badge>
-                      </label>
-                    ))}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-xs text-muted-foreground ml-1">مرتجعات:</span>
-                    {returnFilterStatuses.map(s => (
-                      <label key={s.id} className="flex items-center gap-1 cursor-pointer text-sm">
-                        <Checkbox checked={statusFilter.includes(s.id)} onCheckedChange={() => toggleStatusFilter(s.id)} />
-                        <Badge style={{ backgroundColor: s.color }} className="text-xs">{s.name}</Badge>
-                      </label>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="text-xs h-6" onClick={() => {
-                      const allIds = [...deliveryFilterStatuses, ...returnFilterStatuses].map(s => s.id);
-                      setStatusFilter(allIds);
-                    }}>الكل</Button>
-                    {statusFilter.length > 0 && (
-                      <Button size="sm" variant="ghost" className="text-xs h-6" onClick={() => setStatusFilter([])}>
-                        إلغاء الفلتر
-                      </Button>
-                    )}
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  {statuses.map(s => (
+                    <label key={s.id} className="flex items-center gap-1 cursor-pointer text-sm">
+                      <Checkbox checked={statusFilter.includes(s.id)} onCheckedChange={() => toggleStatusFilter(s.id)} />
+                      <Badge style={{ backgroundColor: s.color }} className="text-xs">{s.name}</Badge>
+                    </label>
+                  ))}
+                  <Button size="sm" variant="outline" className="text-xs h-6" onClick={() => {
+                    setStatusFilter(statuses.map(s => s.id));
+                  }}>الكل</Button>
+                  {statusFilter.length > 0 && (
+                    <Button size="sm" variant="ghost" className="text-xs h-6" onClick={() => setStatusFilter([])}>
+                      إلغاء الفلتر
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
