@@ -13,6 +13,7 @@ import { Plus, Trash2, Lock, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
+import { getHiddenActiveCourierOrderIds, isCourierOrderClosable } from '@/lib/courierClosure';
 
 export default function CourierCollections() {
   const { user, isOwner } = useAuth();
@@ -62,12 +63,24 @@ export default function CourierCollections() {
       .from('orders')
       .select('*, order_statuses(name, color)')
       .eq('courier_id', selectedCourier)
-      .eq('is_courier_closed', false)
       .order('created_at', { ascending: false });
-    setOrders(orderData || []);
+
+    const allOrders = orderData || [];
+    const hiddenActiveIds = getHiddenActiveCourierOrderIds(allOrders);
+
+    if (hiddenActiveIds.length > 0) {
+      await supabase.from('orders').update({ is_courier_closed: false }).in('id', hiddenActiveIds);
+    }
+
+    const reopenedIds = new Set(hiddenActiveIds);
+    const visibleOrders = allOrders
+      .map((order: any) => reopenedIds.has(order.id) ? { ...order, is_courier_closed: false } : order)
+      .filter((order: any) => !order.is_courier_closed);
+
+    setOrders(visibleOrders);
     setSelectedOrders(new Set());
     const notes: Record<string, string> = {};
-    (orderData || []).forEach((o: any) => { notes[o.id] = o.notes || ''; });
+    visibleOrders.forEach((o: any) => { notes[o.id] = o.notes || ''; });
     setOrderNotes(notes);
 
     const { data: bonusData } = await supabase
@@ -146,6 +159,14 @@ export default function CourierCollections() {
 
   const closeSelectedOrders = async () => {
     if (selectedOrders.size === 0) { toast.error('اختر أوردرات للتقفيل'); return; }
+
+    const selectedOrderRows = orders.filter(order => selectedOrders.has(order.id));
+    const blockedOrders = selectedOrderRows.filter(order => !isCourierOrderClosable(order.order_statuses?.name));
+    if (blockedOrders.length > 0) {
+      toast.error(`لا يمكن تقفيل ${blockedOrders.length} أوردر لأن حالتها ما زالت نشطة`);
+      return;
+    }
+
     if (!confirm(`هل تريد تقفيل ${selectedOrders.size} أوردر؟`)) return;
 
     const ids = Array.from(selectedOrders);
