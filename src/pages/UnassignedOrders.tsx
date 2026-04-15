@@ -76,7 +76,7 @@ export default function UnassignedOrders() {
   const assignToCourier = async () => {
     if (!assignCourier || selected.size === 0) { toast.error('اختر مندوب واوردرات'); return; }
     const courierStatus = statuses.find(s => s.name === 'قيد التوصيل');
-    const updateData: any = { courier_id: assignCourier };
+    const updateData: any = { courier_id: assignCourier, is_courier_closed: false };
     if (courierStatus) updateData.status_id = courierStatus.id;
     const { error } = await supabase.from('orders').update(updateData).in('id', Array.from(selected));
     if (error) { toast.error(error.message); return; }
