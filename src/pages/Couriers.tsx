@@ -14,6 +14,7 @@ import { Eye, Lock, StickyNote, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
+import { getHiddenActiveCourierOrderIds, isCourierOrderClosable } from '@/lib/courierClosure';
 
 export default function Couriers() {
   const { user } = useAuth();
@@ -44,9 +45,21 @@ export default function Couriers() {
       .from('orders')
       .select('*, order_statuses(name, color), offices(name)')
       .eq('courier_id', selectedCourier)
-      .eq('is_courier_closed', false)
       .order('created_at', { ascending: false });
-    setCourierOrders(data || []);
+
+    const allOrders = data || [];
+    const hiddenActiveIds = getHiddenActiveCourierOrderIds(allOrders);
+
+    if (hiddenActiveIds.length > 0) {
+      await supabase.from('orders').update({ is_courier_closed: false }).in('id', hiddenActiveIds);
+    }
+
+    const reopenedIds = new Set(hiddenActiveIds);
+    const visibleOrders = allOrders
+      .map(order => reopenedIds.has(order.id) ? { ...order, is_courier_closed: false } : order)
+      .filter(order => !order.is_courier_closed);
+
+    setCourierOrders(visibleOrders);
     setSelectedOrders(new Set());
   };
 
@@ -59,6 +72,11 @@ export default function Couriers() {
   };
   const closeSelected = async () => {
     if (selectedOrders.size === 0) return;
+    const blockedOrders = courierOrders.filter(order => selectedOrders.has(order.id) && !isCourierOrderClosable(order.order_statuses?.name));
+    if (blockedOrders.length > 0) {
+      toast.error(`لا يمكن تقفيل ${blockedOrders.length} أوردر لأن حالتها ما زالت نشطة`);
+      return;
+    }
     if (!confirm(`تقفيل ${selectedOrders.size} أوردر؟`)) return;
     await supabase.from('orders').update({ is_courier_closed: true }).in('id', Array.from(selectedOrders));
     toast.success(`تم تقفيل ${selectedOrders.size} أوردر`);

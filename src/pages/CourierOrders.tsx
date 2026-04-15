@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
 import { useCourierLocation } from '@/hooks/useCourierLocation';
 import { Badge } from '@/components/ui/badge';
+import { getHiddenActiveCourierOrderIds } from '@/lib/courierClosure';
 
 export default function CourierOrders() {
   const { user, logout } = useAuth();
@@ -123,9 +124,21 @@ export default function CourierOrders() {
       .from('orders')
       .select('*, order_statuses(name, color), offices(name)')
       .eq('courier_id', user?.id || '')
-      .eq('is_courier_closed', false)
       .order('created_at', { ascending: false });
-    setOrders(data || []);
+
+    const allOrders = data || [];
+    const hiddenActiveIds = getHiddenActiveCourierOrderIds(allOrders);
+
+    if (hiddenActiveIds.length > 0) {
+      await supabase.from('orders').update({ is_courier_closed: false }).in('id', hiddenActiveIds);
+    }
+
+    const reopenedIds = new Set(hiddenActiveIds);
+    const visibleOrders = allOrders
+      .map((order) => reopenedIds.has(order.id) ? { ...order, is_courier_closed: false } : order)
+      .filter((order) => !order.is_courier_closed);
+
+    setOrders(visibleOrders);
   };
 
   const syncCollectionForOrder = async (orderId: string, amount: number) => {
