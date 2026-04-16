@@ -14,7 +14,7 @@ import { Eye, Lock, StickyNote, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
-import { getHiddenActiveCourierOrderIds, isCourierOrderClosable } from '@/lib/courierClosure';
+import { getHiddenActiveCourierOrderIds, isCourierOrderClosable, isCourierOrderVisible } from '@/lib/courierClosure';
 
 export default function Couriers() {
   const { user } = useAuth();
@@ -57,7 +57,7 @@ export default function Couriers() {
     const reopenedIds = new Set(hiddenActiveIds);
     const visibleOrders = allOrders
       .map(order => reopenedIds.has(order.id) ? { ...order, is_courier_closed: false } : order)
-      .filter(order => !order.is_courier_closed);
+      .filter(isCourierOrderVisible);
 
     setCourierOrders(visibleOrders);
     setSelectedOrders(new Set());
