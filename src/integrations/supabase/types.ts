@@ -675,6 +675,7 @@ export type Database = {
           closed_at: string | null
           color: string | null
           company_id: string | null
+          courier_assigned_at: string | null
           courier_id: string | null
           created_at: string
           customer_code: string | null
@@ -705,6 +706,7 @@ export type Database = {
           closed_at?: string | null
           color?: string | null
           company_id?: string | null
+          courier_assigned_at?: string | null
           courier_id?: string | null
           created_at?: string
           customer_code?: string | null
@@ -735,6 +737,7 @@ export type Database = {
           closed_at?: string | null
           color?: string | null
           company_id?: string | null
+          courier_assigned_at?: string | null
           courier_id?: string | null
           created_at?: string
           customer_code?: string | null
