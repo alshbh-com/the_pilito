@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
 import { useCourierLocation } from '@/hooks/useCourierLocation';
 import { Badge } from '@/components/ui/badge';
-import { getHiddenActiveCourierOrderIds } from '@/lib/courierClosure';
+import { getHiddenActiveCourierOrderIds, isCourierOrderVisible } from '@/lib/courierClosure';
 
 export default function CourierOrders() {
   const { user, logout } = useAuth();
@@ -136,7 +136,7 @@ export default function CourierOrders() {
     const reopenedIds = new Set(hiddenActiveIds);
     const visibleOrders = allOrders
       .map((order) => reopenedIds.has(order.id) ? { ...order, is_courier_closed: false } : order)
-      .filter((order) => !order.is_courier_closed);
+      .filter(isCourierOrderVisible);
 
     setOrders(visibleOrders);
   };
