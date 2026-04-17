@@ -126,6 +126,7 @@ export default function GlobalSearch() {
                     <TableHead className="text-right">الشحن</TableHead>
                     <TableHead className="text-right">الإجمالي</TableHead>
                     <TableHead className="text-right">المكتب</TableHead>
+                    <TableHead className="text-right">المندوب</TableHead>
                     <TableHead className="text-right">الحالة</TableHead>
                     <TableHead className="text-right">ملاحظات</TableHead>
                     <TableHead className="text-right">مقفل</TableHead>
@@ -146,6 +147,7 @@ export default function GlobalSearch() {
                       <TableCell>{Number(order.delivery_price)} ج.م</TableCell>
                       <TableCell className="font-bold">{Number(order.price) + Number(order.delivery_price)} ج.م</TableCell>
                       <TableCell>{order.offices?.name || '-'}</TableCell>
+                      <TableCell className="text-sm">{couriers[order.courier_id] || '-'}</TableCell>
                       <TableCell>
                         <Badge style={{ backgroundColor: order.order_statuses?.color || undefined }} className="text-xs">
                           {order.order_statuses?.name || '-'}
