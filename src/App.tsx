@@ -33,6 +33,8 @@ import CustomersPage from "@/pages/CustomersPage";
 import TrackingPage from "@/pages/TrackingPage";
 import DailyReport from "@/pages/DailyReport";
 import ProfitReport from "@/pages/ProfitReport";
+import TripsReport from "@/pages/TripsReport";
+import CourierReceipt from "@/pages/CourierReceipt";
 import StatusManagement from "@/pages/StatusManagement";
 import OrderNotes from "@/pages/OrderNotes";
 import DataExport from "@/pages/DataExport";
@@ -112,6 +114,8 @@ const App = () => (
               <Route path="/office-stats" element={<OfficeStats />} />
               <Route path="/daily-report" element={<DailyReport />} />
               <Route path="/profit-report" element={<ProfitReport />} />
+              <Route path="/trips-report" element={<TripsReport />} />
+              <Route path="/courier-receipt" element={<CourierReceipt />} />
               <Route path="/status-management" element={<StatusManagement />} />
               <Route path="/order-notes" element={<OrderNotes />} />
               <Route path="/data-export" element={<DataExport />} />

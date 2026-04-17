@@ -34,6 +34,8 @@ export const ALL_SECTIONS = [
   { key: 'courier-stats', label: 'إحصائيات المناديب', url: '/courier-stats' },
   { key: 'office-stats', label: 'إحصائيات المكاتب', url: '/office-stats' },
   { key: 'profit-report', label: 'تقرير الأرباح', url: '/profit-report' },
+  { key: 'trips-report', label: 'تقرير الرحلات', url: '/trips-report' },
+  { key: 'courier-receipt', label: 'إقرار المندوبين', url: '/courier-receipt' },
   { key: 'tracking', label: 'تتبع الشحنات', url: '/tracking' },
   { key: 'print', label: 'الطباعة', url: '/print' },
   { key: 'order-notes', label: 'ملاحظات الأوردرات', url: '/order-notes' },

@@ -11,17 +11,24 @@ import { Search, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { logActivity } from '@/lib/activityLogger';
+import { ReportButton } from '@/components/ReportButton';
 
 export default function GlobalSearch() {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [statuses, setStatuses] = useState<any[]>([]);
+  const [couriers, setCouriers] = useState<Record<string, string>>({});
   const [editOrder, setEditOrder] = useState<any | null>(null);
   const [editStatusId, setEditStatusId] = useState('');
 
   useEffect(() => {
     supabase.from('order_statuses').select('*').order('sort_order').then(({ data }) => setStatuses(data || []));
+    supabase.from('profiles').select('id, full_name').then(({ data }) => {
+      const map: Record<string, string> = {};
+      (data || []).forEach((p: any) => { map[p.id] = p.full_name || '-'; });
+      setCouriers(map);
+    });
   }, []);
 
   // Auto-search with debounce
@@ -63,7 +70,35 @@ export default function GlobalSearch() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">بحث شامل</h1>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h1 className="text-2xl font-bold">بحث شامل</h1>
+        {results.length > 0 && (
+          <ReportButton
+            meta={{
+              title: 'تقرير البحث الشامل',
+              subtitle: `كلمة البحث: ${search}`,
+              filtersText: `كلمة البحث: "${search}"`,
+              summary: [{ label: 'عدد النتائج', value: results.length }],
+            }}
+            columns={[
+              { key: 'tracking_id', label: 'Tracking' },
+              { key: 'customer_code', label: 'الكود' },
+              { key: 'barcode', label: 'الباركود' },
+              { key: 'customer_name', label: 'العميل' },
+              { key: 'customer_phone', label: 'الهاتف' },
+              { key: 'address', label: 'العنوان' },
+              { key: 'product_name', label: 'المنتج' },
+              { key: 'price', label: 'السعر', format: v => `${Number(v || 0)} ج.م` },
+              { key: 'delivery_price', label: 'الشحن', format: v => `${Number(v || 0)} ج.م` },
+              { key: 'office_name', label: 'المكتب', format: (_, r) => r.offices?.name || '-' },
+              { key: 'courier_name', label: 'المندوب', format: (_, r) => couriers[r.courier_id] || '-' },
+              { key: 'status_name', label: 'الحالة', format: (_, r) => r.order_statuses?.name || '-' },
+              { key: 'is_closed', label: 'مقفل' },
+            ]}
+            rows={results}
+          />
+        )}
+      </div>
       <div className="relative max-w-lg">
         <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="بحث بالباركود / الكود / رقم الهاتف / الاسم / العنوان..." value={search}
@@ -91,6 +126,7 @@ export default function GlobalSearch() {
                     <TableHead className="text-right">الشحن</TableHead>
                     <TableHead className="text-right">الإجمالي</TableHead>
                     <TableHead className="text-right">المكتب</TableHead>
+                    <TableHead className="text-right">المندوب</TableHead>
                     <TableHead className="text-right">الحالة</TableHead>
                     <TableHead className="text-right">ملاحظات</TableHead>
                     <TableHead className="text-right">مقفل</TableHead>
@@ -111,6 +147,7 @@ export default function GlobalSearch() {
                       <TableCell>{Number(order.delivery_price)} ج.م</TableCell>
                       <TableCell className="font-bold">{Number(order.price) + Number(order.delivery_price)} ج.م</TableCell>
                       <TableCell>{order.offices?.name || '-'}</TableCell>
+                      <TableCell className="text-sm">{couriers[order.courier_id] || '-'}</TableCell>
                       <TableCell>
                         <Badge style={{ backgroundColor: order.order_statuses?.color || undefined }} className="text-xs">
                           {order.order_statuses?.name || '-'}
