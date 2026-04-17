@@ -11,17 +11,24 @@ import { Search, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { logActivity } from '@/lib/activityLogger';
+import { ReportButton } from '@/components/ReportButton';
 
 export default function GlobalSearch() {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [statuses, setStatuses] = useState<any[]>([]);
+  const [couriers, setCouriers] = useState<Record<string, string>>({});
   const [editOrder, setEditOrder] = useState<any | null>(null);
   const [editStatusId, setEditStatusId] = useState('');
 
   useEffect(() => {
     supabase.from('order_statuses').select('*').order('sort_order').then(({ data }) => setStatuses(data || []));
+    supabase.from('profiles').select('id, full_name').then(({ data }) => {
+      const map: Record<string, string> = {};
+      (data || []).forEach((p: any) => { map[p.id] = p.full_name || '-'; });
+      setCouriers(map);
+    });
   }, []);
 
   // Auto-search with debounce
