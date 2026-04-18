@@ -80,6 +80,12 @@ export default function CourierReceipt() {
   }, 0)
   + groups.rejected.reduce((s, o) => s + Number(o.shipping_paid || 0), 0);
 
+  // Auto commission: applies to delivered + partial + rejected (paid shipping)
+  const commissionRate = Number(courier?.commission_amount || 0);
+  const commissionableCount = groups.delivered.length + groups.rejected.length;
+  const totalCommission = commissionRate * commissionableCount;
+  const netDue = totalCollected - totalCommission;
+
   const reportColumns = [
     { key: 'tracking_id', label: 'Tracking' },
     { key: 'barcode', label: 'الباركود' },
@@ -92,6 +98,11 @@ export default function CourierReceipt() {
     { key: 'status', label: 'الحالة', format: (_: any, r: any) => r.order_statuses?.name || '-' },
     { key: 'partial_amount', label: 'المحصل جزئي', format: (v: any) => v ? `${Number(v)} ج.م` : '-' },
     { key: 'shipping_paid', label: 'شحن مدفوع', format: (v: any) => v ? `${Number(v)} ج.م` : '-' },
+    { key: 'commission', label: 'عمولة المندوب', format: (_: any, r: any) => {
+      const sname = r.order_statuses?.name;
+      if (DELIVERED_NAMES.includes(sname) || REJECTED_NAMES.includes(sname)) return `${commissionRate} ج.م`;
+      return '-';
+    } },
     { key: 'notes', label: 'ملاحظات' },
   ];
 
@@ -106,6 +117,8 @@ export default function CourierReceipt() {
       { label: 'رفض', value: groups.rejected.length },
       { label: 'قيد التنفيذ', value: groups.pending.length },
       { label: 'إجمالي المحصل', value: `${totalCollected.toLocaleString()} ج.م` },
+      { label: `عمولة المندوب (${commissionRate}×${commissionableCount})`, value: `${totalCommission.toLocaleString()} ج.م` },
+      { label: 'صافي المستحق للشركة', value: `${netDue.toLocaleString()} ج.م` },
     ],
   };
 
@@ -147,7 +160,7 @@ export default function CourierReceipt() {
 
       {selectedCourier && (
         <>
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 grid-cols-2 lg:grid-cols-6">
             <Card className="bg-card border-border"><CardContent className="p-3 text-center">
               <Package className="h-5 w-5 mx-auto mb-1 text-primary" />
               <p className="text-xs text-muted-foreground">إجمالي اليوم</p>
@@ -172,7 +185,22 @@ export default function CourierReceipt() {
               <p className="text-xs text-primary">إجمالي المحصل</p>
               <p className="text-lg font-bold text-primary">{totalCollected.toLocaleString()} ج.م</p>
             </CardContent></Card>
+            <Card className="bg-sky-50 border-sky-200"><CardContent className="p-3 text-center">
+              <p className="text-xs text-sky-700">عمولة المندوب</p>
+              <p className="text-lg font-bold text-sky-700">{totalCommission.toLocaleString()} ج.م</p>
+              <p className="text-[10px] text-muted-foreground">{commissionRate} × {commissionableCount}</p>
+            </CardContent></Card>
           </div>
+
+          <Card className="bg-emerald-100/50 border-emerald-300"><CardContent className="p-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-emerald-700">صافي المستحق للشركة (المحصل − عمولة المندوب)</p>
+              <p className="text-2xl font-extrabold text-emerald-700">{netDue.toLocaleString()} ج.م</p>
+            </div>
+            {commissionRate === 0 && (
+              <p className="text-xs text-amber-700 max-w-xs text-left">⚠️ عمولة المندوب = 0. عدّلها من صفحة المستخدمين.</p>
+            )}
+          </CardContent></Card>
 
           <ReceiptSection title="تم التسليم" items={groups.delivered} color="emerald" />
           <ReceiptSection title="مرتجع" items={groups.returned} color="amber" />

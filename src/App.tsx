@@ -49,6 +49,7 @@ import AccountingLayout from "@/components/AccountingLayout";
 import OfficeReport from "@/pages/OfficeReport";
 import TrashBin from "@/pages/TrashBin";
 import SystemGuide from "@/pages/SystemGuide";
+import OfficeDailyExpenses from "@/pages/OfficeDailyExpenses";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -104,6 +105,7 @@ const App = () => (
               <Route path="/courier-collections" element={<CourierCollections />} />
               <Route path="/collections" element={<Navigate to="/courier-collections" replace />} />
               <Route path="/office-accounts" element={<OfficeAccounts />} />
+              <Route path="/office-daily-expenses" element={<OfficeDailyExpenses />} />
               <Route path="/advances" element={<Advances />} />
               <Route path="/print" element={<PrintSticker />} />
               <Route path="/logs" element={<ActivityLogs />} />

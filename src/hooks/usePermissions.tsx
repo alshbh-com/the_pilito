@@ -27,6 +27,7 @@ export const ALL_SECTIONS = [
   { key: 'courier-collections', label: 'تحصيلات المندوبين', url: '/courier-collections' },
   { key: 'company-accounts', label: 'حسابات الشركات', url: '/company-accounts' },
   { key: 'office-accounts', label: 'حسابات المكاتب', url: '/office-accounts' },
+  { key: 'office-daily-expenses', label: 'مصاريف المكتب اليومية', url: '/office-daily-expenses' },
   { key: 'advances', label: 'السلفات والخصومات', url: '/advances' },
   { key: 'office-settlement', label: 'تقفيلة المكاتب', url: '/office-settlement' },
   { key: 'daily-report', label: 'التقرير اليومي', url: '/daily-report' },
