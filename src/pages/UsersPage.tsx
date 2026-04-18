@@ -26,7 +26,11 @@ export default function UsersPage() {
   const [newCode, setNewCode] = useState('');
   const [newRole, setNewRole] = useState('');
   const [newOfficeId, setNewOfficeId] = useState('');
+  const [newCommission, setNewCommission] = useState('');
   const [creating, setCreating] = useState(false);
+
+  // Edit commission per courier
+  const [commissionEdit, setCommissionEdit] = useState<Record<string, string>>({});
 
   // Edit password
   const [pwDialog, setPwDialog] = useState<any>(null);
@@ -97,18 +101,32 @@ export default function UsersPage() {
     if (newRole === 'office' && !newOfficeId) { toast.error('اختر المكتب'); return; }
     setCreating(true);
     try {
-      await callEdgeFunction('create-user', { 
+      const result = await callEdgeFunction('create-user', { 
         full_name: newName, phone: newPhone, login_code: newCode, role: newRole,
         office_id: newRole === 'office' ? newOfficeId : undefined,
       });
+      // Save commission for couriers (uses profiles.commission_amount)
+      if (newRole === 'courier' && newCommission && result?.user?.id) {
+        await supabase.from('profiles').update({ commission_amount: Number(newCommission) }).eq('id', result.user.id);
+      }
       toast.success('تم إنشاء المستخدم بنجاح');
       setCreateOpen(false);
-      setNewName(''); setNewPhone(''); setNewCode(''); setNewRole(''); setNewOfficeId('');
+      setNewName(''); setNewPhone(''); setNewCode(''); setNewRole(''); setNewOfficeId(''); setNewCommission('');
       loadUsers();
     } catch (err: any) {
       toast.error(err.message || 'خطأ');
     }
     setCreating(false);
+  };
+
+  const saveCommission = async (userId: string) => {
+    const v = commissionEdit[userId];
+    if (v === undefined) return;
+    const { error } = await supabase.from('profiles').update({ commission_amount: Number(v) || 0 }).eq('id', userId);
+    if (error) { toast.error('فشل الحفظ'); return; }
+    toast.success('تم حفظ العمولة');
+    setCommissionEdit(prev => { const n = { ...prev }; delete n[userId]; return n; });
+    loadUsers();
   };
 
   const updatePassword = async () => {
@@ -245,6 +263,13 @@ export default function UsersPage() {
                         {offices.map(o => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                  </div>
+                )}
+                {newRole === 'courier' && (
+                  <div>
+                    <Label>عمولة الأوردر الثابتة (ج.م)</Label>
+                    <Input type="number" value={newCommission} onChange={e => setNewCommission(e.target.value)} className="bg-secondary border-border" placeholder="مثال: 30" dir="ltr" />
+                    <p className="text-xs text-muted-foreground mt-1">تُحسب أوتوماتيك على كل أوردر مُسلَّم/جزئي/رفض ودفع شحن.</p>
                   </div>
                 )}
                 <Button onClick={createUser} className="w-full" disabled={creating}>
