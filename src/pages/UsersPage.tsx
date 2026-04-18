@@ -292,6 +292,7 @@ export default function UsersPage() {
                   {isOwner && showPasswords && <TableHead className="text-right">كلمة المرور</TableHead>}
                   <TableHead className="text-right">الصلاحية</TableHead>
                   <TableHead className="text-right">المكتب</TableHead>
+                  <TableHead className="text-right">عمولة المندوب</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-right">إجراءات</TableHead>
                 </TableRow>
