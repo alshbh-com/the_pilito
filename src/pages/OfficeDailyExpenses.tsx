@@ -63,13 +63,14 @@ export default function OfficeDailyExpenses() {
   }, [offices]);
 
   const totals = useMemo(() => {
-    const t: Record<string, number> = { shipments: 0, office: 0, advances: 0 };
+    let shipments = 0, office = 0, advances = 0;
     items.forEach(i => {
-      const c = i.category as string;
-      if (t[c] !== undefined) t[c] += Number(i.amount || 0);
+      const v = Number(i.amount || 0);
+      if (i.category === 'shipments') shipments += v;
+      else if (i.category === 'office') office += v;
+      else if (i.category === 'advances') advances += v;
     });
-    const all = t.shipments + t.office + t.advances;
-    return { ...t, all };
+    return { shipments, office, advances, all: shipments + office + advances };
   }, [items]);
 
   const save = async () => {
