@@ -538,6 +538,39 @@ export type Database = {
           },
         ]
       }
+      office_daily_expenses: {
+        Row: {
+          amount: number | null
+          category: string
+          created_at: string
+          created_by: string | null
+          expense_date: string
+          id: string
+          notes: string | null
+          office_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          office_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          office_id?: string | null
+        }
+        Relationships: []
+      }
       office_payments: {
         Row: {
           amount: number | null
@@ -581,6 +614,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          office_commission: number | null
           owner_name: string | null
           owner_phone: string | null
           phone: string | null
@@ -593,6 +627,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          office_commission?: number | null
           owner_name?: string | null
           owner_phone?: string | null
           phone?: string | null
@@ -605,6 +640,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          office_commission?: number | null
           owner_name?: string | null
           owner_phone?: string | null
           phone?: string | null
@@ -817,6 +853,7 @@ export type Database = {
       profiles: {
         Row: {
           address: string | null
+          commission_amount: number | null
           coverage_areas: string | null
           created_at: string
           full_name: string | null
@@ -830,6 +867,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          commission_amount?: number | null
           coverage_areas?: string | null
           created_at?: string
           full_name?: string | null
@@ -843,6 +881,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          commission_amount?: number | null
           coverage_areas?: string | null
           created_at?: string
           full_name?: string | null

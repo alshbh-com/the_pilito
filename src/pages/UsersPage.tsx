@@ -26,7 +26,11 @@ export default function UsersPage() {
   const [newCode, setNewCode] = useState('');
   const [newRole, setNewRole] = useState('');
   const [newOfficeId, setNewOfficeId] = useState('');
+  const [newCommission, setNewCommission] = useState('');
   const [creating, setCreating] = useState(false);
+
+  // Edit commission per courier
+  const [commissionEdit, setCommissionEdit] = useState<Record<string, string>>({});
 
   // Edit password
   const [pwDialog, setPwDialog] = useState<any>(null);
@@ -97,18 +101,32 @@ export default function UsersPage() {
     if (newRole === 'office' && !newOfficeId) { toast.error('اختر المكتب'); return; }
     setCreating(true);
     try {
-      await callEdgeFunction('create-user', { 
+      const result = await callEdgeFunction('create-user', { 
         full_name: newName, phone: newPhone, login_code: newCode, role: newRole,
         office_id: newRole === 'office' ? newOfficeId : undefined,
       });
+      // Save commission for couriers (uses profiles.commission_amount)
+      if (newRole === 'courier' && newCommission && result?.user?.id) {
+        await supabase.from('profiles').update({ commission_amount: Number(newCommission) }).eq('id', result.user.id);
+      }
       toast.success('تم إنشاء المستخدم بنجاح');
       setCreateOpen(false);
-      setNewName(''); setNewPhone(''); setNewCode(''); setNewRole(''); setNewOfficeId('');
+      setNewName(''); setNewPhone(''); setNewCode(''); setNewRole(''); setNewOfficeId(''); setNewCommission('');
       loadUsers();
     } catch (err: any) {
       toast.error(err.message || 'خطأ');
     }
     setCreating(false);
+  };
+
+  const saveCommission = async (userId: string) => {
+    const v = commissionEdit[userId];
+    if (v === undefined) return;
+    const { error } = await supabase.from('profiles').update({ commission_amount: Number(v) || 0 }).eq('id', userId);
+    if (error) { toast.error('فشل الحفظ'); return; }
+    toast.success('تم حفظ العمولة');
+    setCommissionEdit(prev => { const n = { ...prev }; delete n[userId]; return n; });
+    loadUsers();
   };
 
   const updatePassword = async () => {
@@ -247,6 +265,13 @@ export default function UsersPage() {
                     </Select>
                   </div>
                 )}
+                {newRole === 'courier' && (
+                  <div>
+                    <Label>عمولة الأوردر الثابتة (ج.م)</Label>
+                    <Input type="number" value={newCommission} onChange={e => setNewCommission(e.target.value)} className="bg-secondary border-border" placeholder="مثال: 30" dir="ltr" />
+                    <p className="text-xs text-muted-foreground mt-1">تُحسب أوتوماتيك على كل أوردر مُسلَّم/جزئي/رفض ودفع شحن.</p>
+                  </div>
+                )}
                 <Button onClick={createUser} className="w-full" disabled={creating}>
                   {creating ? 'جارٍ الإنشاء...' : 'إنشاء المستخدم'}
                 </Button>
@@ -267,15 +292,16 @@ export default function UsersPage() {
                   {isOwner && showPasswords && <TableHead className="text-right">كلمة المرور</TableHead>}
                   <TableHead className="text-right">الصلاحية</TableHead>
                   <TableHead className="text-right">المكتب</TableHead>
+                  <TableHead className="text-right">عمولة المندوب</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-right">إجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={isOwner && showPasswords ? 8 : 7} className="text-center text-muted-foreground py-8">جارٍ التحميل...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={isOwner && showPasswords ? 9 : 8} className="text-center text-muted-foreground py-8">جارٍ التحميل...</TableCell></TableRow>
                 ) : users.length === 0 ? (
-                  <TableRow><TableCell colSpan={isOwner && showPasswords ? 8 : 7} className="text-center text-muted-foreground py-8">لا يوجد مستخدمين</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={isOwner && showPasswords ? 9 : 8} className="text-center text-muted-foreground py-8">لا يوجد مستخدمين</TableCell></TableRow>
                 ) : users.map(u => (
                   <TableRow key={u.id} className="border-border">
                     <TableCell className="font-medium">{u.full_name}</TableCell>
@@ -289,6 +315,20 @@ export default function UsersPage() {
                       <Badge style={{ backgroundColor: roleColor(u.role) }} className="text-xs">{roleLabel(u.role)}</Badge>
                     </TableCell>
                     <TableCell className="text-sm">{u.officeName || '-'}</TableCell>
+                    <TableCell>
+                      {u.role === 'courier' ? (
+                        <div className="flex gap-1 items-center">
+                          <Input
+                            type="number"
+                            value={commissionEdit[u.id] !== undefined ? commissionEdit[u.id] : (u.commission_amount ?? 0)}
+                            onChange={e => setCommissionEdit(prev => ({ ...prev, [u.id]: e.target.value }))}
+                            onBlur={() => commissionEdit[u.id] !== undefined && saveCommission(u.id)}
+                            className="h-7 w-20 bg-secondary border-border text-xs"
+                          />
+                          <span className="text-xs text-muted-foreground">ج.م</span>
+                        </div>
+                      ) : <span className="text-xs text-muted-foreground">-</span>}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={u.is_active ? 'default' : 'secondary'}>{u.is_active ? 'نشط' : 'غير نشط'}</Badge>
                     </TableCell>
