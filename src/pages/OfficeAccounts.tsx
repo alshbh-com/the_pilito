@@ -339,11 +339,13 @@ export default function OfficeAccounts() {
       <td>${Number(o.price || 0) - Number(o.delivery_price || 0)}</td>
       <td>${statusName(o.status_id)}</td>
       <td>${getCourierName(o.courier_id)}</td>
+      <td style="text-align:center;font-weight:bold;color:${o.is_settled ? '#16a34a' : '#dc2626'}">${o.is_settled ? '✅ خالص' : '❌'}</td>
     </tr>`).join('');
 
     const totalPrice = filteredOrders.reduce((s, o) => s + Number(o.price || 0), 0);
     const totalShipping = filteredOrders.reduce((s, o) => s + Number(o.delivery_price || 0), 0);
     const totalNet = totalPrice - totalShipping;
+    const settledCount = filteredOrders.filter(o => o.is_settled).length;
 
     w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">
     <title>حسابات ${officeName}</title>
@@ -358,10 +360,10 @@ export default function OfficeAccounts() {
       .total-row { background: #e8f4e8; font-weight: bold; }
     </style></head><body>
     <div class="header">The Pilito - حسابات ${officeName}</div>
-    <div class="sub-header">${format(new Date(), 'dd/MM/yyyy')}</div>
+    <div class="sub-header">${format(new Date(), 'dd/MM/yyyy')} | خالص: ${settledCount} / ${filteredOrders.length}</div>
     
     <table>
-      <thead><tr><th>#</th><th>الباركود</th><th>العميل</th><th>الهاتف</th><th>الإجمالي</th><th>الشحن</th><th>عمولة المندوب</th><th>عمولة المكتب</th><th>الصافي</th><th>الحالة</th><th>المندوب</th></tr></thead>
+      <thead><tr><th>#</th><th>الباركود</th><th>العميل</th><th>الهاتف</th><th>الإجمالي</th><th>الشحن</th><th>عمولة المندوب</th><th>عمولة المكتب</th><th>الصافي</th><th>الحالة</th><th>المندوب</th><th>خالص</th></tr></thead>
       <tbody>
         ${orderRows}
         <tr class="total-row">
@@ -371,7 +373,7 @@ export default function OfficeAccounts() {
           <td>${courierRate * filteredOrders.length}</td>
           <td>${officeRate * filteredOrders.length}</td>
           <td>${totalNet}</td>
-          <td colspan="2"></td>
+          <td colspan="3">خالص: ${settledCount}</td>
         </tr>
       </tbody>
     </table>
